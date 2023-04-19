@@ -17,7 +17,7 @@ public class ShipPlayer
     private float Rotation { get; set; }
     private Vector3 Position { get; set; }
     private float RotationVelocity { get; set; } = 10f;
-    private float Velocity { get; set; } = 5000f;
+    private float Velocity { get; set; } = 10000f;
 
     // Uso el constructor como el Initialize
     public ShipPlayer()
@@ -57,10 +57,10 @@ public class ShipPlayer
         {
             if (keyboardState.IsKeyDown(Keys.W))
             {
-                Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * Velocity;
+                Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * Velocity * 10f;
             } else if (keyboardState.IsKeyDown(Keys.S))
             {
-                Position += Matrix.CreateRotationY(Rotation).Left * deltaTime * Velocity;
+                Position += Matrix.CreateRotationY(Rotation).Left * deltaTime * Velocity * 10f;
             }
         }
         

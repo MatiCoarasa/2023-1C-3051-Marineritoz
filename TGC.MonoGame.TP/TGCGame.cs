@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using TGC.MonoGame.TP.Camera;
 using TGC.MonoGame.TP.Entities;
+using TGC.MonoGame.TP.Helpers;
 
 namespace TGC.MonoGame.TP
 {
@@ -21,7 +22,20 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderTextures = "Textures/";
         private FollowCamera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
+
+        private Parcela Parcela;
         private Island[] Islands { get; set; }
+
+        private Effect Effect { get; set; }
+
+        private Model ModelShip { get; set; }
+
+        private Model ModelIsland1 { get; set; }
+        private Model ModelIsland2 { get; set; }
+
+        private Model ModelIsland3 { get; set; }
+
+
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -58,12 +72,14 @@ namespace TGC.MonoGame.TP
             // Configuramos nuestras matrices de la escena.
             FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer();
-            Islands = new[]
+
+
+           /* Islands = new[]
             {
                 new Island(Matrix.CreateTranslation(0, 0, 25000) * Matrix.CreateScale(0.3f)),
                 new Island(Matrix.CreateTranslation(20000, 0, 0) * Matrix.CreateScale(0.1f)),
                 new Island(Matrix.CreateTranslation(25000, 0, 20000) * Matrix.CreateScale(0.3f))
-            };
+            };*/
             base.Initialize();
         }
 
@@ -76,11 +92,52 @@ namespace TGC.MonoGame.TP
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
             Ship.LoadContent(Content);
-            string[] islandPaths = { "Island1/Island1", "Island2/Island2", "Island3/Island3" };
-            for (var i = 0; i < islandPaths.Length; i++)
+            ModelShip = Content.Load<Model>(ContentFolder3D + "ShipA/Ship");
+            ModelIsland1 = Content.Load<Model>(ContentFolder3D + "Island1/Island1");
+            ModelIsland2 = Content.Load<Model>(ContentFolder3D + "Island2/Island2");
+            ModelIsland3 = Content.Load<Model>(ContentFolder3D + "Island3/Island3");
+            Effect = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
+
+            foreach (var mesh in ModelShip.Meshes)
             {
-                Islands[i].LoadContent(Content, islandPaths[i]);
+                // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
+                foreach (var meshPart in mesh.MeshParts)
+                {
+                    meshPart.Effect = Effect;
+                }
             }
+
+            foreach (var mesh in ModelIsland1.Meshes)
+            {
+                // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
+                foreach (var meshPart in mesh.MeshParts)
+                {
+                    meshPart.Effect = Effect;
+                }
+            }
+
+            foreach (var mesh in ModelIsland2.Meshes)
+            {
+                // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
+                foreach (var meshPart in mesh.MeshParts)
+                {
+                    meshPart.Effect = Effect;
+                }
+            }
+
+            foreach (var mesh in ModelIsland3.Meshes)
+            {
+                // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
+                foreach (var meshPart in mesh.MeshParts)
+                {
+                    meshPart.Effect = Effect;
+                }
+            }
+            GeneradorDeParcelas generador = new GeneradorDeParcelas();
+
+            Parcela = generador.setCantidadDeBarcos(5).setPosicion(Matrix.CreateTranslation(0f,0f,7500f))
+    .setDefaultEffect(Effect).setModelIsland(ModelIsland1).setModelShip(ModelShip).generar();
+
             base.LoadContent();
         }
 
@@ -110,10 +167,12 @@ namespace TGC.MonoGame.TP
         {
             GraphicsDevice.Clear(Color.Aqua);
             Ship.Draw(FollowCamera);
+            Parcela.Draw();
+            /*
             foreach (var island in Islands)
             {
-                island.Draw();
-            }
+                island.Draw(ModelIsland2, Effect);
+            }*/
         }
 
         /// <summary>
