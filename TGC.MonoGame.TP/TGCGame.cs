@@ -2,6 +2,9 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using TGC.MonoGame.TP.Camera;
+using TGC.MonoGame.TP.Entities;
+using TGC.MonoGame.TP.Entities.Islands;
 
 namespace TGC.MonoGame.TP
 {
@@ -18,7 +21,13 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderSounds = "Sounds/";
         public const string ContentFolderSpriteFonts = "SpriteFonts/";
         public const string ContentFolderTextures = "Textures/";
-
+        private FollowCamera FollowCamera { get; set; }
+        private ShipPlayer Ship { get; set; }
+        private Effect Effect { get; set; }
+        private Island[] Islands { get; set; }
+        private IslandGenerator IslandGenerator { get; set; }
+        private Water Water { get; set; }
+        private float WaterCounter { get; set; }
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -26,6 +35,7 @@ namespace TGC.MonoGame.TP
         {
             // Maneja la configuracion y la administracion del dispositivo grafico.
             Graphics = new GraphicsDeviceManager(this);
+            // Graphics.IsFullScreen = true;
             // Para que el juego sea pantalla completa se puede usar Graphics IsFullScreen.
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
@@ -35,12 +45,6 @@ namespace TGC.MonoGame.TP
 
         private GraphicsDeviceManager Graphics { get; }
         private SpriteBatch SpriteBatch { get; set; }
-        private Model Model { get; set; }
-        private Effect Effect { get; set; }
-        private float Rotation { get; set; }
-        private Matrix World { get; set; }
-        private Matrix View { get; set; }
-        private Matrix Projection { get; set; }
 
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
@@ -48,22 +52,16 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Initialize()
         {
-            // La logica de inicializacion que no depende del contenido se recomienda poner en este metodo.
-
             // Apago el backface culling.
             // Esto se hace por un problema en el diseno del modelo del logo de la materia.
             // Una vez que empiecen su juego, esto no es mas necesario y lo pueden sacar.
             var rasterizerState = new RasterizerState();
             rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            // Seria hasta aca.
-
-            // Configuramos nuestras matrices de la escena.
-            World = Matrix.Identity;
-            View = Matrix.CreateLookAt(Vector3.UnitZ * 150, Vector3.Zero, Vector3.Up);
-            Projection =
-                Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, GraphicsDevice.Viewport.AspectRatio, 1, 250);
-
+            WaterCounter = 0;
+            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
+            Ship = new ShipPlayer();
+            IslandGenerator = new IslandGenerator();
             base.Initialize();
         }
 
@@ -74,27 +72,12 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void LoadContent()
         {
-            // Aca es donde deberiamos cargar todos los contenido necesarios antes de iniciar el juego.
             SpriteBatch = new SpriteBatch(GraphicsDevice);
-
-            // Cargo el modelo del logo.
-            Model = Content.Load<Model>(ContentFolder3D + "tgc-logo/tgc-logo");
-
-            // Cargo un efecto basico propio declarado en el Content pipeline.
-            // En el juego no pueden usar BasicEffect de MG, deben usar siempre efectos propios.
             Effect = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
-
-            // Asigno el efecto que cargue a cada parte del mesh.
-            // Un modelo puede tener mas de 1 mesh internamente.
-            foreach (var mesh in Model.Meshes)
-            {
-                // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
-                foreach (var meshPart in mesh.MeshParts)
-                {
-                    meshPart.Effect = Effect;
-                }
-            }
-
+            Ship.LoadContent(Content, Effect);
+            IslandGenerator.LoadContent(Content, Effect);
+            Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f);
+            Water = new Water(GraphicsDevice,Effect, 100);
             base.LoadContent();
         }
 
@@ -105,18 +88,19 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
-            // Aca deberiamos poner toda la logica de actualizacion del juego.
-
             // Capturar Input teclado
             if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
                 //Salgo del juego.
                 Exit();
             }
-
-            // Basado en el tiempo que paso se va generando una rotacion.
-            Rotation += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-
+            WaterCounter += (float) gameTime.ElapsedGameTime.TotalSeconds;
+            if (WaterCounter > .5)
+            {
+                Water.UpdateWaves();
+                WaterCounter = 0;
+            }
+            Ship.Update(gameTime, FollowCamera);
             base.Update(gameTime);
         }
 
@@ -126,20 +110,12 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Draw(GameTime gameTime)
         {
-            // Aca deberiamos poner toda la logia de renderizado del juego.
-            GraphicsDevice.Clear(Color.Black);
-
-            // Para dibujar le modelo necesitamos pasarle informacion que el efecto esta esperando.
-            Effect.Parameters["View"].SetValue(View);
-            Effect.Parameters["Projection"].SetValue(Projection);
-            Effect.Parameters["DiffuseColor"].SetValue(Color.DarkBlue.ToVector3());
-            var rotationMatrix = Matrix.CreateRotationY(Rotation);
-
-            foreach (var mesh in Model.Meshes)
+            GraphicsDevice.Clear(Color.Aqua);
+            Ship.Draw(FollowCamera);
+            Water.DrawWaves(Matrix.CreateTranslation(-100,0.0005f, -100), FollowCamera.View, FollowCamera.Projection);
+            foreach (var island in Islands)
             {
-                World = mesh.ParentBone.Transform * rotationMatrix;
-                Effect.Parameters["World"].SetValue(World);
-                mesh.Draw();
+                island.Draw();
             }
         }
 
