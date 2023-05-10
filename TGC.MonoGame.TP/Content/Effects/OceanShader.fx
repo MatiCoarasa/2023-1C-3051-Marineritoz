@@ -19,7 +19,7 @@ uniform float4x4 Projection;
 
 uniform float3 DiffuseColor;
 
-uniform float Time = 0;
+float Time = 0;
 
 uniform texture ModelTexture;
 sampler2D TextureSampler = sampler_state
@@ -44,19 +44,46 @@ struct VertexShaderOutput
 	float2 TextureCoordinate : TEXCOORD0;
 };
 
+static const float PI = 3.14159265f;
+
+float3 GerstnerWave (float4 wave, float3 position) {
+    float steepness = wave.z;
+    float waveLength = wave.w;
+    float2 direction = normalize(wave.xy);
+	// float speed = 1.5;
+	float k = 2 * PI / waveLength;
+	float speed = sqrt(9.8 / k);
+	float waveAmplitude = steepness / k;
+	float frequency = k * (dot(direction, position.xz) - speed * Time);
+    return float3(
+		direction.x * (waveAmplitude * cos(frequency)),
+		waveAmplitude * sin(frequency),
+		direction.y * (waveAmplitude * cos(frequency))
+    );
+}
+
+float4 Wave(float2 direction, float steepness, float waveLength)
+{
+    return float4(direction, steepness, waveLength);
+}
+
 VertexShaderOutput MainVS(in VertexShaderInput input)
 {
     // Clear the output
 	VertexShaderOutput output = (VertexShaderOutput)0;
-	float endTime = 2 * sin(Time) + 6;
-	input.Position.y = 0.05 * sin(endTime * input.Position.z * input.Position.x * 2) * cos(endTime);
-    // Model space to World space
+	// Model space to World space
     float4 worldPosition = mul(input.Position, World);
+	float3 anchorPoint = worldPosition.xyz;
+	float4 wave1 = Wave(float2(1,1),0.25,15);
+	float4 wave2 = Wave(float2(1,0.6),0.25,10);
+	float4 wave3 = Wave(float2(1,1.3),0.25,5);
+    worldPosition.xyz += GerstnerWave(wave1, anchorPoint);
+    worldPosition.xyz += GerstnerWave(wave2, anchorPoint);
+    worldPosition.xyz += GerstnerWave(wave3, anchorPoint);
     // World space to View space
     float4 viewPosition = mul(worldPosition, View);	
 	// View space to Projection space
     output.Position = mul(viewPosition, Projection);
-
     output.TextureCoordinate = input.TextureCoordinate;
     return output;
 }

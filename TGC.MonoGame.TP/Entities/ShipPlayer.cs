@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Diagnostics;
 using TGC.MonoGame.TP.Camera;
+using TGC.MonoGame.TP.Utils;
 
 namespace TGC.MonoGame.TP.Entities;
 
@@ -18,6 +19,7 @@ public class ShipPlayer
     private Vector3 Position { get; set; }
     private float RotationVelocity { get; set; } = 3f;
     private float Velocity { get; set; } = 10f;
+    private BoundingBox ShipBoundingBox { get; set; }
 
     // Uso el constructor como el Initialize
     public ShipPlayer()
@@ -31,7 +33,7 @@ public class ShipPlayer
     {
         Effect = effect;
         Model = content.Load<Model>(ContentFolder3D + "ShipA/Ship");
-
+        ShipBoundingBox = Model.CreateAABB();
         foreach (var mesh in Model.Meshes)
         {
             // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
