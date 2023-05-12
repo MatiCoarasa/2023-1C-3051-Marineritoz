@@ -12,6 +12,7 @@ public class IslandGenerator
 {
     private const string ContentFolder3D = "Models/";
     private IList<Model> IslandsModel { get; set; } = new List<Model>();
+    private IList<IList<Texture2D>> IslandsTextures { get; set; } = new List<IList<Texture2D>>(); 
     private Effect Effect { get; set; }
     
     string[] _islandPaths = { "Island1/Island1", "Island2/Island2", "Island3/Island3" };
@@ -21,22 +22,24 @@ public class IslandGenerator
         Effect = effect;
         for (var i = 0; i < _islandPaths.Length; i++)
         {
-            IslandsModel.Add(content.Load<Model>(ContentFolder3D + _islandPaths[i]));
-            foreach (var mesh in IslandsModel[i].Meshes)
+            var model = content.Load<Model>(ContentFolder3D + _islandPaths[i]);
+            IslandsTextures.Add(new List<Texture2D>());
+            foreach (var mesh in model.Meshes)
             {
-                // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
                 foreach (var meshPart in mesh.MeshParts)
                 {
+                    IslandsTextures[i].Add(((BasicEffect)meshPart.Effect).Texture);
                     meshPart.Effect = Effect;
                 }
             }
+            IslandsModel.Add(model);
         }
     }
 
     private Island Create(int modelNumber, Vector3 translation, float scale, float rotation = 0)
     {
         Matrix world = Matrix.CreateScale(scale) * Matrix.CreateRotationY(rotation) *  Matrix.CreateTranslation(translation);
-        return new Island(IslandsModel[modelNumber], world, Effect);
+        return new Island(IslandsModel[modelNumber], world, Effect, IslandsTextures[modelNumber]);
     }
 
     public Island[] CreateRandomIslands(int qty, float maxX, float maxZ)

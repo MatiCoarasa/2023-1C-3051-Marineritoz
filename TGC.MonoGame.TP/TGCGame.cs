@@ -23,7 +23,7 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderTextures = "Textures/";
         private FollowCamera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
-        private Effect Effect { get; set; }
+        private Effect TextureShader { get; set; }
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
@@ -73,9 +73,9 @@ namespace TGC.MonoGame.TP
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
             Water.LoadContent(Content);
-            Effect = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
-            Ship.LoadContent(Content, Effect);
-            IslandGenerator.LoadContent(Content, Effect);
+            TextureShader = Content.Load<Effect>(ContentFolderEffects + "TextureShader");
+            Ship.LoadContent(Content, TextureShader);
+            IslandGenerator.LoadContent(Content, TextureShader);
             Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f);
             base.LoadContent();
         }
@@ -105,11 +105,11 @@ namespace TGC.MonoGame.TP
         {
             GraphicsDevice.Clear(Color.Aqua);
             Ship.Draw(FollowCamera);
-            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
             foreach (var island in Islands)
             {
-                island.Draw();
+                island.Draw(FollowCamera.View, FollowCamera.Projection);
             }
+            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
         }
 
         /// <summary>

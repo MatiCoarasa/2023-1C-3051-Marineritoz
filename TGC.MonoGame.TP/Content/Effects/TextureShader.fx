@@ -7,19 +7,9 @@
 	#define PS_SHADERMODEL ps_4_0_level_9_1
 #endif
 
-// Custom Effects - https://docs.monogame.net/articles/content/custom_effects.html
-// High-level shader language (HLSL) - https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl
-// Programming guide for HLSL - https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-pguide
-// Reference for HLSL - https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-reference
-// HLSL Semantics - https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics
-
 uniform float4x4 World;
 uniform float4x4 View;
 uniform float4x4 Projection;
-
-uniform float3 DiffuseColor;
-
-uniform float Time = 0;
 
 uniform texture ModelTexture;
 sampler2D TextureSampler = sampler_state
@@ -54,7 +44,6 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
     float4 viewPosition = mul(worldPosition, View);	
 	// View space to Projection space
     output.Position = mul(viewPosition, Projection);
-
     output.TextureCoordinate = input.TextureCoordinate;
     return output;
 }
@@ -66,7 +55,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     return textureColor;
 }
 
-technique BasicColorDrawing
+technique TextureDrawing
 {
 	pass P0
 	{

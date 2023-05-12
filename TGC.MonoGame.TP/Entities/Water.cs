@@ -11,7 +11,7 @@ namespace TGC.MonoGame.TP.Entities
     {
         public const string ContentFolderEffects = "Effects/";
         public const string ContentFolderTextures = "Textures/";
-        public const int RowsOfQuads = 10;
+        public const int RowsOfQuads = 100;
         private Quad Quad { get; set; }
         private GraphicsDevice GraphicsDevice { get; set; }
 
