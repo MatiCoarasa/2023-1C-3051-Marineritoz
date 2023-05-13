@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Diagnostics;
+using System.Linq;
 using TGC.MonoGame.TP.Camera;
 
 namespace TGC.MonoGame.TP.Entities;
@@ -18,6 +20,7 @@ public class ShipPlayer
     private Vector3 Position { get; set; }
     private float RotationVelocity { get; set; } = 3f;
     private float Velocity { get; set; } = 10f;
+    private IList<Texture2D> ColorTextures { get; set; } = new List<Texture2D>();
 
     // Uso el constructor como el Initialize
     public ShipPlayer()
@@ -26,15 +29,14 @@ public class ShipPlayer
         Position = Vector3.Zero;
         Rotation = 0f;
     }
-    
+
     public void LoadContent(ContentManager content, Effect effect)
     {
         Effect = effect;
         Model = content.Load<Model>(ContentFolder3D + "ShipA/Ship");
-
         foreach (var mesh in Model.Meshes)
         {
-            // Un mesh puede tener mas de 1 mesh part (cada 1 puede tener su propio efecto).
+            ColorTextures.Add(((BasicEffect)mesh.MeshParts.FirstOrDefault().Effect).Texture);
             foreach (var meshPart in mesh.MeshParts)
             {
                 meshPart.Effect = Effect;
@@ -81,14 +83,14 @@ public class ShipPlayer
     {
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
-        Effect.Parameters["DiffuseColor"].SetValue(Color.Gray.ToVector3());
-        var modelMeshesBaseTransforms = new Matrix[Model.Bones.Count];
-        Model.CopyAbsoluteBoneTransformsTo(modelMeshesBaseTransforms);
+        int index = 0;
         foreach (var mesh in Model.Meshes)
         {
-            var relativeTransform = modelMeshesBaseTransforms[mesh.ParentBone.Index];
-            Effect.Parameters["World"].SetValue(relativeTransform * World);
+            var meshPartColorTexture = ColorTextures[index];
+            Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
+            Effect.Parameters["ModelTexture"].SetValue(meshPartColorTexture);
             mesh.Draw();
+            index++;
         }
     }
 }
