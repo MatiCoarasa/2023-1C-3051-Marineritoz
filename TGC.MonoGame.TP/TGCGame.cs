@@ -19,7 +19,7 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderEffects = "Effects/";
         public const string ContentFolderMusic = "Music/";
         public const string ContentFolderSounds = "Sounds/";
-        public const string ContentFolderSpriteFonts = "SpriteFonts/";
+        public const string ContentFolderSpriteFonts = "Fonts/";
         public const string ContentFolderTextures = "Textures/";
         private FollowCamera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
@@ -27,7 +27,8 @@ namespace TGC.MonoGame.TP
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
-        private float WaterCounter { get; set; }
+        private float Time { get; set; }
+        private SpriteFont Font { get; set; }
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -35,12 +36,16 @@ namespace TGC.MonoGame.TP
         {
             // Maneja la configuracion y la administracion del dispositivo grafico.
             Graphics = new GraphicsDeviceManager(this);
-            // Graphics.IsFullScreen = true;
-            // Para que el juego sea pantalla completa se puede usar Graphics IsFullScreen.
+            
+            Graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width - 200;
+            Graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 200;
+            Graphics.GraphicsProfile = GraphicsProfile.HiDef;
+
+            IsMouseVisible = true;
+            IsFixedTimeStep = false;
+
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
-            // Hace que el mouse sea visible.
-            IsMouseVisible = true;
         }
 
         private GraphicsDeviceManager Graphics { get; }
@@ -58,10 +63,11 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            WaterCounter = 0;
             FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer();
             IslandGenerator = new IslandGenerator();
+            Time = 0;
+            Water = new Water(GraphicsDevice);
             base.Initialize();
         }
 
@@ -73,11 +79,12 @@ namespace TGC.MonoGame.TP
         protected override void LoadContent()
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
+            Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
+            Water.LoadContent(Content);
             Effect = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
             Ship.LoadContent(Content, Effect);
             IslandGenerator.LoadContent(Content, Effect);
-            Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f);
-            Water = new Water(GraphicsDevice,Effect, 100);
+            Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f, .05f);
             base.LoadContent();
         }
 
@@ -88,17 +95,12 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
+            Time += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
             // Capturar Input teclado
             if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
                 //Salgo del juego.
                 Exit();
-            }
-            WaterCounter += (float) gameTime.ElapsedGameTime.TotalSeconds;
-            if (WaterCounter > .5)
-            {
-                Water.UpdateWaves();
-                WaterCounter = 0;
             }
             Ship.Update(gameTime, FollowCamera);
             base.Update(gameTime);
@@ -111,8 +113,9 @@ namespace TGC.MonoGame.TP
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Aqua);
-            Ship.Draw(FollowCamera);
-            Water.DrawWaves(Matrix.CreateTranslation(-100,0.0005f, -100), FollowCamera.View, FollowCamera.Projection);
+            Ship.Draw(FollowCamera, SpriteBatch, Font);
+            Water.Draw(FollowCamera.View, FollowCamera.Projection, Time);
+
             foreach (var island in Islands)
             {
                 island.Draw();
