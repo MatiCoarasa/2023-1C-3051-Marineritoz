@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using TGC.MonoGame.TP.Camera;
+using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
 
@@ -21,7 +21,7 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderSounds = "Sounds/";
         public const string ContentFolderSpriteFonts = "Fonts/";
         public const string ContentFolderTextures = "Textures/";
-        private FollowCamera FollowCamera { get; set; }
+        private Camera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
         private Effect Effect { get; set; }
         private Island[] Islands { get; set; }
@@ -29,6 +29,8 @@ namespace TGC.MonoGame.TP
         private Water Water { get; set; }
         private float Time { get; set; }
         private SpriteFont Font { get; set; }
+
+        private Rain rain;
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -63,11 +65,14 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
+            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer();
             IslandGenerator = new IslandGenerator();
             Time = 0;
             Water = new Water(GraphicsDevice);
+            rain = new Rain(Content, GraphicsDevice);
+            rain.Initialize(1000f, 150f, -3f, 7000, 1.2f);
+
             base.Initialize();
         }
 
@@ -85,6 +90,7 @@ namespace TGC.MonoGame.TP
             Ship.LoadContent(Content, Effect);
             IslandGenerator.LoadContent(Content, Effect);
             Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f, .05f);
+            rain.Load();
             base.LoadContent();
         }
 
@@ -115,6 +121,7 @@ namespace TGC.MonoGame.TP
             GraphicsDevice.Clear(Color.Aqua);
             Ship.Draw(FollowCamera, SpriteBatch, Font);
             Water.Draw(FollowCamera.View, FollowCamera.Projection, Time);
+            rain.Draw(gameTime, FollowCamera.View, FollowCamera.Projection);
 
             foreach (var island in Islands)
             {

@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Diagnostics;
-using TGC.MonoGame.TP.Camera;
+using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP.Entities;
 
@@ -51,7 +51,7 @@ public class ShipPlayer
         }
     }
     
-    public void Update(GameTime gameTime, FollowCamera followCamera)
+    public void Update(GameTime gameTime, Camera followCamera)
     {
         var deltaTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
         LastVelocityChangeTimer += deltaTime;
@@ -116,7 +116,7 @@ public class ShipPlayer
             Rotation -= deltaTime * RotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
         }
     }
-    public void Draw(FollowCamera followCamera, SpriteBatch spriteBatch, SpriteFont spriteFont)
+    public void Draw(Camera followCamera, SpriteBatch spriteBatch, SpriteFont spriteFont)
     {
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
