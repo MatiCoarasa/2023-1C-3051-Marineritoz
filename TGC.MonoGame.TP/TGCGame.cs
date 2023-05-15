@@ -21,13 +21,15 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderSounds = "Sounds/";
         public const string ContentFolderSpriteFonts = "Fonts/";
         public const string ContentFolderTextures = "Textures/";
-        private FollowCamera FollowCamera { get; set; }
+        private Camera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
         private Effect TextureShader { get; set; }
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
         private SpriteFont Font { get; set; }
+
+        private Rain rain;
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -62,10 +64,13 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
+            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer();
             IslandGenerator = new IslandGenerator();
             Water = new Water(GraphicsDevice);
+            rain = new Rain(Content, GraphicsDevice);
+            rain.Initialize(1000f, 150f, -3f, 7000, 1.2f);
+
             base.Initialize();
         }
 
@@ -111,6 +116,7 @@ namespace TGC.MonoGame.TP
         {
             GraphicsDevice.Clear(Color.Aqua);
             Ship.Draw(FollowCamera, SpriteBatch, Font);
+            rain.Draw(gameTime, FollowCamera.View, FollowCamera.Projection);
             foreach (var island in Islands)
             {
                 island.Draw(FollowCamera.View, FollowCamera.Projection);
