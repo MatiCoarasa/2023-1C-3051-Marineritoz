@@ -19,7 +19,7 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderEffects = "Effects/";
         public const string ContentFolderMusic = "Music/";
         public const string ContentFolderSounds = "Sounds/";
-        public const string ContentFolderSpriteFonts = "SpriteFonts/";
+        public const string ContentFolderSpriteFonts = "Fonts/";
         public const string ContentFolderTextures = "Textures/";
         private FollowCamera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
@@ -27,6 +27,7 @@ namespace TGC.MonoGame.TP
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
+        private SpriteFont Font { get; set; }
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -34,12 +35,16 @@ namespace TGC.MonoGame.TP
         {
             // Maneja la configuracion y la administracion del dispositivo grafico.
             Graphics = new GraphicsDeviceManager(this);
-            // Graphics.IsFullScreen = true;
-            // Para que el juego sea pantalla completa se puede usar Graphics IsFullScreen.
+            
+            Graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width - 200;
+            Graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 200;
+            Graphics.GraphicsProfile = GraphicsProfile.HiDef;
+
+            IsMouseVisible = true;
+            IsFixedTimeStep = false;
+
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
-            // Hace que el mouse sea visible.
-            IsMouseVisible = true;
         }
 
         private GraphicsDeviceManager Graphics { get; }
@@ -72,11 +77,12 @@ namespace TGC.MonoGame.TP
         protected override void LoadContent()
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
+            Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
             Water.LoadContent(Content);
             TextureShader = Content.Load<Effect>(ContentFolderEffects + "TextureShader");
             Ship.LoadContent(Content, TextureShader);
             IslandGenerator.LoadContent(Content, TextureShader);
-            Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f);
+            Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f, .05f);
             base.LoadContent();
         }
 
@@ -104,7 +110,7 @@ namespace TGC.MonoGame.TP
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Aqua);
-            Ship.Draw(FollowCamera);
+            Ship.Draw(FollowCamera, SpriteBatch, Font);
             foreach (var island in Islands)
             {
                 island.Draw(FollowCamera.View, FollowCamera.Projection);
