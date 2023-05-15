@@ -1,11 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Diagnostics;
 using System.Linq;
-using TGC.MonoGame.TP.Camera;
 using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP.Entities;
@@ -47,15 +46,15 @@ public class ShipPlayer
 
         foreach (var mesh in Model.Meshes)
         {
-            ColorTextures.Add(((BasicEffect)mesh.MeshParts.FirstOrDefault().Effect).Texture);
             foreach (var meshPart in mesh.MeshParts)
             {
+                ColorTextures.Add(((BasicEffect)meshPart.Effect).Texture);
                 meshPart.Effect = Effect;
             }
         }
     }
     
-    public void Update(GameTime gameTime, FollowCamera followCamera)
+    public void Update(GameTime gameTime, Camera followCamera)
     {
         var deltaTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
         LastVelocityChangeTimer += deltaTime;
@@ -132,11 +131,21 @@ public class ShipPlayer
         int index = 0;
         foreach (var mesh in Model.Meshes)
         {
-            var meshPartColorTexture = ColorTextures[index];
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
-            Effect.Parameters["ModelTexture"].SetValue(meshPartColorTexture);
-            mesh.Draw();
-            index++;
+            foreach (var meshPart in mesh.MeshParts)
+            {
+                meshPart.Effect.GraphicsDevice.SetVertexBuffer(meshPart.VertexBuffer);
+                meshPart.Effect.GraphicsDevice.Indices = meshPart.IndexBuffer;
+                Effect.Parameters["ModelTexture"].SetValue(ColorTextures[index]);
+                foreach (var pass in Effect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    meshPart.Effect.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex,
+                        meshPart.PrimitiveCount);
+                }
+                mesh.Draw();
+                index++;
+            }
         }
     }
 }

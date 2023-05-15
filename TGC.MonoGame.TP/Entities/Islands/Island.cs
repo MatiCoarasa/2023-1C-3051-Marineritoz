@@ -29,9 +29,16 @@ public class Island
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
             foreach (var meshPart in mesh.MeshParts)
             {
+                meshPart.Effect.GraphicsDevice.SetVertexBuffer(meshPart.VertexBuffer);
+                meshPart.Effect.GraphicsDevice.Indices = meshPart.IndexBuffer;
                 var meshPartColorTexture = Textures[index];
                 Effect.Parameters["ModelTexture"].SetValue(meshPartColorTexture);
-                mesh.Draw();
+                foreach (var pass in Effect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    meshPart.Effect.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex,
+                        meshPart.PrimitiveCount);
+                }
                 index++;
             }
         }

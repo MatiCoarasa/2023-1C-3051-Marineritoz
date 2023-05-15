@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using TGC.MonoGame.TP.Camera;
+using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
 
@@ -88,6 +88,7 @@ namespace TGC.MonoGame.TP
             Ship.LoadContent(Content, TextureShader);
             IslandGenerator.LoadContent(Content, TextureShader);
             Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f, .05f);
+            rain.Load();
             base.LoadContent();
         }
 

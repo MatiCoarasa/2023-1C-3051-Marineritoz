@@ -108,7 +108,7 @@ namespace TGC.MonoGame.TP
 
 
 
-            this.Effect = Content.Load<Effect>(ContentFolderEffects + "RainShader");
+            Effect = Content.Load<Effect>(ContentFolderEffects + "RainShader");
         }
         
         public void Draw(GameTime gameTime, Matrix view, Matrix projection)
