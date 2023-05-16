@@ -15,7 +15,7 @@ public class IslandGenerator
     private IList<IList<Texture2D>> IslandsTextures { get; set; } = new List<IList<Texture2D>>(); 
     private Effect Effect { get; set; }
     
-    string[] _islandPaths = { "Island1/Island1", "Island2/Island2", "Island3/Island3" };
+    private readonly string[] _islandPaths = { "Island1/Island1", "Island2/Island2", "Island3/Island3" };
 
     public void LoadContent(ContentManager content, Effect effect)
     {
@@ -36,28 +36,34 @@ public class IslandGenerator
         }
     }
 
-    private Island Create(int modelNumber, Vector3 translation, float scale, float rotation = 0)
+    private Island CreateIsland(int modelNumber, float scale, Vector3 translation)
     {
-        Matrix world = Matrix.CreateScale(scale) * Matrix.CreateRotationY(rotation) *  Matrix.CreateTranslation(translation);
-        return new Island(IslandsModel[modelNumber], world, Effect, IslandsTextures[modelNumber]);
+        return new Island(IslandsModel[modelNumber], Effect, IslandsTextures[modelNumber], scale, translation);
     }
 
-    public Island[] CreateRandomIslands(int qty, float maxX, float maxZ)
+    public Island[] CreateRandomIslands(int qty, float maxX, float maxZ, float noSpawnRadius)
     {
         Debug.WriteLine("[CreateRandomIslands] qty: " + qty + " maxX: " + maxX + " maxZ: " + maxZ);
-        Island[] islands = new Island[qty];
+        var islands = new Island[qty];
 
-        Random rnd = new Random();
-        for (int i = 0; i < qty; i++)
+        var rnd = new Random();
+        for (var i = 0; i < qty; i++)
         {
-            float islandX = (rnd.NextSingle() - .5f) * maxX;
-            float islandZ = (rnd.NextSingle() - .5f) * maxZ;
-            Vector3 islandVector = new Vector3(islandX, 0, islandZ);
+            // Resto .5f para "centralizar" el punto de origen de las islas.
+            var rndX = rnd.NextSingle() - .5f;
+            var rndZ = rnd.NextSingle() - .5f;
+
+            rndX += Math.Sign(rndX) * noSpawnRadius;
+            rndZ += Math.Sign(rndZ) * noSpawnRadius;
+            
+            var islandX = rndX * maxX;
+            var islandZ = rndZ * maxZ;
+            var islandVector = new Vector3(islandX, 0, islandZ);
             Debug.WriteLine("[Creating Island " + i + "] " + islandVector);
 
-            float islandScale = rnd.NextSingle() / 100;
-            float islandRotation = rnd.NextSingle() * Convert.ToSingle(Math.PI) * 2f;
-            islands[i] = Create(rnd.Next(_islandPaths.Length), new Vector3(islandX, 0, islandZ), islandScale, islandRotation);
+            var islandScale = rnd.NextSingle() / 100;
+            var islandRotation = rnd.NextSingle() * Convert.ToSingle(Math.PI) * 2f;
+            islands[i] = CreateIsland(rnd.Next(_islandPaths.Length), islandScale, new Vector3(islandX, 0, islandZ));
         }
 
         return islands;

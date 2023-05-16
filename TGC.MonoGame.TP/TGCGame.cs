@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Diagnostics;
 using TGC.MonoGame.TP.Camera;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
@@ -19,14 +20,23 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderEffects = "Effects/";
         public const string ContentFolderMusic = "Music/";
         public const string ContentFolderSounds = "Sounds/";
-        public const string ContentFolderSpriteFonts = "SpriteFonts/";
+        public const string ContentFolderSpriteFonts = "Fonts/";
         public const string ContentFolderTextures = "Textures/";
         private FollowCamera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
         private Effect TextureShader { get; set; }
+
+        private int _islandsQuantity = 200;
+        
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
+        private float Time { get; }
+        private SpriteFont Font { get; set; }
+
+        private BoundingBox[] _colliders;
+        private bool _hasShipCollisioned;
+        
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -38,7 +48,10 @@ namespace TGC.MonoGame.TP
             Graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width - 200;
             Graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 200;
             Graphics.GraphicsProfile = GraphicsProfile.HiDef;
-            
+
+            IsMouseVisible = true;
+            IsFixedTimeStep = false;
+
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
         }
@@ -60,8 +73,12 @@ namespace TGC.MonoGame.TP
             GraphicsDevice.RasterizerState = rasterizerState;
             FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer();
+            
             IslandGenerator = new IslandGenerator();
             Water = new Water(GraphicsDevice);
+            
+            _colliders = new BoundingBox[_islandsQuantity];
+            
             base.Initialize();
         }
 
@@ -73,11 +90,24 @@ namespace TGC.MonoGame.TP
         protected override void LoadContent()
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
+            
+            Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
+            
+            // Load water
             Water.LoadContent(Content);
+            
+            // Load ship
             TextureShader = Content.Load<Effect>(ContentFolderEffects + "TextureShader");
             Ship.LoadContent(Content, TextureShader);
+
+            // Load islands
             IslandGenerator.LoadContent(Content, TextureShader);
-            Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f);
+            Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f, .05f);
+            for (int i = 0; i < Islands.Length; i++)
+            {
+                _colliders[i] = Islands[i].BoundingBox;
+            }
+            
             base.LoadContent();
         }
 
@@ -95,6 +125,18 @@ namespace TGC.MonoGame.TP
                 Exit();
             }
             Ship.Update(gameTime, FollowCamera);
+
+            var collisionDetected = false;
+            foreach (var collider in _colliders)
+            {
+                if (Ship.BoundingBox.Intersects(collider))
+                {
+                    collisionDetected = true;
+                }
+            }
+
+            _hasShipCollisioned = collisionDetected;
+            
             base.Update(gameTime);
         }
 
@@ -105,7 +147,15 @@ namespace TGC.MonoGame.TP
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Aqua);
-            Ship.Draw(FollowCamera);
+            
+            Ship.Draw(FollowCamera, SpriteBatch, Font);
+            Water.Draw(FollowCamera.View, FollowCamera.Projection, Time);
+            
+            SpriteBatch.Begin();
+            SpriteBatch.DrawString(Font, "Ship collision: " + _hasShipCollisioned, 
+                new Vector2(0, 40), Color.Red);
+            SpriteBatch.End();
+
             foreach (var island in Islands)
             {
                 island.Draw(FollowCamera.View, FollowCamera.Projection);
