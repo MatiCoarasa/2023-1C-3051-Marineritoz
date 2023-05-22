@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Content;
 using System;
+using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP
 {
@@ -111,22 +112,23 @@ namespace TGC.MonoGame.TP
             Effect = Content.Load<Effect>(ContentFolderEffects + "RainShader");
         }
         
-        public void Draw(GameTime gameTime, Matrix view, Matrix projection)
+        public void Draw(GameTime gameTime, Camera Camera)
         {
-            GraphicsDevice.BlendState = BlendState.Opaque;
+            GraphicsDevice.BlendState = BlendState.AlphaBlend;
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
 
-            Effect.Parameters["View"].SetValue(view);
-            Effect.Parameters["Projection"].SetValue(projection);
+            Effect.Parameters["View"].SetValue(Camera.View);
+            Effect.Parameters["Projection"].SetValue(Camera.Projection);
             Effect.Parameters["DiffuseColor"].SetValue(Color.Blue.ToVector3());
             Effect.Parameters["Time"]?.SetValue(Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
             Effect.Parameters["MaxHeight"]?.SetValue(_maxHeight);
             Effect.Parameters["MinHeight"]?.SetValue(_minHeight);
             Effect.Parameters["Speed"]?.SetValue(_speedBaseDrop);
-
+            Effect.Parameters["CameraPosition"].SetValue(Camera.Position);
             GraphicsDevice.Indices = _indexBuffer;
             GraphicsDevice.SetVertexBuffers(Binding);
             Effect.CurrentTechnique.Passes[0].Apply();
+
 
             GraphicsDevice.DrawInstancedPrimitives(PrimitiveType.TriangleList, 0, 0, 2,_dropCount);
         }

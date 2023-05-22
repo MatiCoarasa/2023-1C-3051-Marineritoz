@@ -62,14 +62,14 @@ namespace TGC.MonoGame.TP
             // Esto se hace por un problema en el diseno del modelo del logo de la materia.
             // Una vez que empiecen su juego, esto no es mas necesario y lo pueden sacar.
             var rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
+            //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
             FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
-            Ship = new ShipPlayer();
+            Ship = new ShipPlayer(GraphicsDevice);
             IslandGenerator = new IslandGenerator();
             Water = new Water(GraphicsDevice);
             rain = new Rain(Content, GraphicsDevice);
-            rain.Initialize(1000f, 150f, -3f, 7000, 1.2f);
+            rain.Initialize(100f, 150f, -3f, 500, 1f);
 
             base.Initialize();
         }
@@ -116,13 +116,25 @@ namespace TGC.MonoGame.TP
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Aqua);
-            Ship.Draw(FollowCamera, SpriteBatch, Font);
-            rain.Draw(gameTime, FollowCamera.View, FollowCamera.Projection);
+
+
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+
+            rain.Draw(gameTime, FollowCamera);
+
+            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+
             foreach (var island in Islands)
             {
+                GraphicsDevice.BlendState = BlendState.Opaque;
                 island.Draw(FollowCamera.View, FollowCamera.Projection);
             }
-            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+
+            Ship.Draw(FollowCamera, SpriteBatch, Font);
+
+
+
         }
 
         /// <summary>

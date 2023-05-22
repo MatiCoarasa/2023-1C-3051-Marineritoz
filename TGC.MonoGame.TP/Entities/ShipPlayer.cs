@@ -29,14 +29,16 @@ public class ShipPlayer
     private float LastVelocityChangeTimer { get; set; }
     private float MinimumSecsBetweenVelocityChanges { get; } = .5f;
 
+    private GraphicsDevice GraphicsDevice;
     private float Acceleration { get; } = 1f;
 
     // Uso el constructor como el Initialize
-    public ShipPlayer()
+    public ShipPlayer(GraphicsDevice graphicsDevice)
     {
         World = Matrix.Identity;
         Position = Vector3.Zero;
         Rotation = 0f;
+        GraphicsDevice = graphicsDevice;
     }
 
     public void LoadContent(ContentManager content, Effect effect)
@@ -123,12 +125,9 @@ public class ShipPlayer
     {
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
-        spriteBatch.Begin();
-        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.00"), new Vector2(0, 20), Color.Black);
-        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (Velocities.Length - 2), 
-            new Vector2(0, 0), Color.Black);
-        spriteBatch.End();
+        
         int index = 0;
+        GraphicsDevice.BlendState = BlendState.Opaque;
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
@@ -147,5 +146,11 @@ public class ShipPlayer
                 index++;
             }
         }
+
+        spriteBatch.Begin();
+        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.00"), new Vector2(0, 20), Color.Black);
+        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (Velocities.Length - 2),
+            new Vector2(0, 0), Color.Black);
+        spriteBatch.End();
     }
 }

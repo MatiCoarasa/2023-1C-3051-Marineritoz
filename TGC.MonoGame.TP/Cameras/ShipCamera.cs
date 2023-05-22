@@ -27,7 +27,6 @@ namespace TGC.MonoGame.TP.Cameras
         private float factor;
         private float sens;
         private float pitch;
-
         /// <summary>
         /// Crea una FollowCamera que sigue a una matriz de mundo
         /// </summary>
@@ -61,39 +60,11 @@ namespace TGC.MonoGame.TP.Cameras
             // Obtengo la posicion de la matriz de mundo que estoy siguiendo
             var followedPosition = followedWorld.Translation;
 
-            // Obtengo el vector Derecha de la matriz de mundo que estoy siguiendo
-            var followedRight = followedWorld.Right;
-
-            // Si el producto escalar entre el vector Derecha anterior
-            // y el actual es mas grande que un limite,
-            // muevo el Interpolator (desde 0 a 1) mas cerca de 1
-            if (Vector3.Dot(followedRight, PastRightVector) > AngleThreshold)
-            {
-                // Incremento el Interpolator
-                RightVectorInterpolator += elapsedTime * AngleFollowSpeed;
-
-                // No permito que Interpolator pase de 1
-                RightVectorInterpolator = MathF.Min(RightVectorInterpolator, 1f);
-
-                // Calculo el vector Derecha a partir de la interpolacion
-                // Esto mueve el vector Derecha para igualar al vector Derecha que sigo
-                // En este caso uso la curva x^2 para hacerlo mas suave
-                // Interpolator se convertira en 1 eventualmente
-                CurrentRightVector = Vector3.Lerp(CurrentRightVector, followedRight, RightVectorInterpolator * RightVectorInterpolator);
-            }
-            else
-                // Si el angulo no pasa de cierto limite, lo pongo de nuevo en cero
-                RightVectorInterpolator = 0f;
-
-            // Guardo el vector Derecha para usar en la siguiente iteracion
-            PastRightVector = followedRight;
-
-
 
             detectarMovimiento(elapsedTime);
 
 
-            var offsetedPosition = followedPosition + new Vector3(radius * MathF.Cos(MathHelper.ToRadians(yaw) * MathF.Cos(MathHelper.ToRadians(pitch)))
+            Position = followedPosition + new Vector3(radius * MathF.Cos(MathHelper.ToRadians(yaw) * MathF.Cos(MathHelper.ToRadians(pitch)))
                     , radius * MathF.Sin(MathHelper.ToRadians(pitch))
                     , radius * MathF.Sin(MathHelper.ToRadians(yaw) * MathF.Cos(MathHelper.ToRadians(pitch))));
 
@@ -104,7 +75,7 @@ namespace TGC.MonoGame.TP.Cameras
             // Calcular el vector Adelante haciendo la resta entre el destino y el origen
             // y luego normalizandolo (Esta operacion es cara!)
             // (La siguiente operacion necesita vectores normalizados)
-            var forward = (followedPosition - offsetedPosition);
+            var forward = (followedPosition - Position);
             forward.Normalize();
 
             // Obtengo el vector Derecha asumiendo que la camara tiene el vector Arriba apuntando hacia arriba
@@ -117,7 +88,7 @@ namespace TGC.MonoGame.TP.Cameras
 
             // Calculo la matriz de Vista de la camara usando la Posicion, La Posicion a donde esta mirando,
             // y su vector Arriba
-            View = Matrix.CreateLookAt(offsetedPosition, followedPosition, cameraCorrectUp);
+            View = Matrix.CreateLookAt(Position, followedPosition, cameraCorrectUp);
         }
 
 

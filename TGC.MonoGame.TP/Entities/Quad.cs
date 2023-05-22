@@ -118,13 +118,12 @@ namespace TGC.MonoGame.TP.Entities
             // Set our vertex declaration, vertex buffer, and index buffer.
             graphicsDevice.SetVertexBuffer(Vertices);
             graphicsDevice.Indices = Indices;
-            graphicsDevice.BlendState = BlendState.Additive;
+
             foreach (var effectPass in effect.CurrentTechnique.Passes)
             {
                 effectPass.Apply();
                 graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, Indices.IndexCount / 3);
             }
-            graphicsDevice.BlendState = BlendState.Opaque;
         }
     }
 }

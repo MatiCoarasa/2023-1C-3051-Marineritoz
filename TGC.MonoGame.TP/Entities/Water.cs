@@ -40,6 +40,10 @@ namespace TGC.MonoGame.TP.Entities
         {
             float escala = 1000f;
             Matrix world = Matrix.CreateScale(escala) * Matrix.CreateTranslation(0,0.0005f, 0);
+
+            GraphicsDevice.BlendState = BlendState.AlphaBlend;
+            GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+
             Quad.Draw(world, view, projection, time);
         }
     }

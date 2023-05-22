@@ -13,7 +13,7 @@ float4x4 View;
 float4x4 Projection;
 
 float3 DiffuseColor;
-float3 CameraPos;
+float3 CameraPosition;
 uniform float Time;
 uniform float MaxHeight;
 uniform float MinHeight;
@@ -47,12 +47,18 @@ VertexShaderOutput MainVS(in InstanceInput instance, in VertexShaderInput input)
 
     
     float4 worldPosition;
-    worldPosition.x = input.LocalPosition.x + instance.Offset.x;
+    
+    worldPosition.x = input.LocalPosition.x + instance.Offset.x + CameraPosition.x;
     worldPosition.y = input.LocalPosition.y + instance.Offset.y;
-    worldPosition.z = input.LocalPosition.z + instance.Offset.z;
+    worldPosition.z = input.LocalPosition.z + instance.Offset.z + CameraPosition.z;
     worldPosition.w = 1;
     
     float4 worldPositionModified = float4(worldPosition.x, lerp(worldPosition.y, MinHeight, frac(Time * 2 * Speed + worldPosition.y)), worldPosition.zw);
+    
+    
+    float3 normalVector = normalize(CameraPosition);
+    float3 cameraRight = float3(View[0][0],View[1][0],View[2][0]);
+    float3 cameraUp = float3(0, 1, 0);
 
     // World space to View space
     float4 viewPosition = mul(worldPositionModified, View);
