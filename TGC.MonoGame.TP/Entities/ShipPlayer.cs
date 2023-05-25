@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Linq;
 using TGC.MonoGame.TP.Cameras;
+using TGC.MonoGame.TP.DataClass;
+using TGC.MonoGame.TP.Utils;
 
 namespace TGC.MonoGame.TP.Entities;
 
@@ -13,8 +16,9 @@ public class ShipPlayer
 {
     public const string ContentFolder3D = "Models/";
     private Model Model { get; set; }
+    private WaterPosition WaterPosition { get; set; }
     private Effect Effect { get; set; }
-    private Matrix World { get; set; }
+    public Matrix World { get; set; }
     private float Rotation { get; set; }
     private Vector3 Position { get; set; }
     private float Velocity { get; set; } = 10f;
@@ -39,6 +43,7 @@ public class ShipPlayer
         Position = Vector3.Zero;
         Rotation = 0f;
         GraphicsDevice = graphicsDevice;
+        WaterPosition = new WaterPosition(Vector3.Zero, Vector3.Zero, Vector3.Zero);
     }
 
     public void LoadContent(ContentManager content, Effect effect)
@@ -59,6 +64,7 @@ public class ShipPlayer
     public void Update(GameTime gameTime, Camera followCamera)
     {
         var deltaTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
+        var totalTime = Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds);
         LastVelocityChangeTimer += deltaTime;
 
 
@@ -66,8 +72,12 @@ public class ShipPlayer
         var keyboardState = Keyboard.GetState();
         ResolveShipRotation(deltaTime, keyboardState);
         ResolveShipMovement(deltaTime, keyboardState);
-        World = Matrix.CreateScale(0.00025f) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
-        
+        WaterPosition = Position.GetPositionInWave(totalTime);
+        World = Matrix.CreateScale(0.00025f)
+                * Matrix.CreateFromQuaternion(Quaternion.CreateFromYawPitchRoll(WaterPosition.tangent.X, WaterPosition.tangent.Y / 4, WaterPosition.tangent.Z / 2))
+                * Matrix.CreateFromQuaternion(Quaternion.CreateFromYawPitchRoll(WaterPosition.binormal.X, WaterPosition.binormal.Y / 4, WaterPosition.binormal.Z / 2))
+                * Matrix.CreateRotationY(Rotation)
+                * Matrix.CreateTranslation(WaterPosition.position + new Vector3(0, 1, 0));
         followCamera.Update(gameTime, World);
     }
 
@@ -86,7 +96,8 @@ public class ShipPlayer
             CurrentVelocity -= Acceleration * deltaTime;
         }
         
-        Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * CurrentVelocity;
+        var waterVelocityDisplacement = Math.Min(WaterPosition.tangent.Z * 2 * CurrentVelocity, 0);
+        Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * (CurrentVelocity - waterVelocityDisplacement);
 
         if (LastVelocityChangeTimer < MinimumSecsBetweenVelocityChanges) return;
         

@@ -64,7 +64,7 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
+            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(GraphicsDevice);
             IslandGenerator = new IslandGenerator();
             Water = new Water(GraphicsDevice);
@@ -105,6 +105,7 @@ namespace TGC.MonoGame.TP
                 //Salgo del juego.
                 Exit();
             }
+
             Ship.Update(gameTime, FollowCamera);
             base.Update(gameTime);
         }
