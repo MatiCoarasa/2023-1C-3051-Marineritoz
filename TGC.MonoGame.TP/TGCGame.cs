@@ -28,7 +28,7 @@ namespace TGC.MonoGame.TP
         private ShipPlayer Ship { get; set; }
         private Effect TextureShader { get; set; }
         public Gizmos Gizmos { get; }
-        private const bool GizmosEnabled = false;
+        private const bool GizmosEnabled = true;
         
         private const int IslandsQuantity = 200;
 
@@ -77,17 +77,16 @@ namespace TGC.MonoGame.TP
             // Esto se hace por un problema en el diseno del modelo del logo de la materia.
             // Una vez que empiecen su juego, esto no es mas necesario y lo pueden sacar.
             var rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
+            //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
 
 
             FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
-            Ship = new ShipPlayer(this);
+            Ship = new ShipPlayer(this, GraphicsDevice);
             IslandGenerator = new IslandGenerator(this);
             Water = new Water(GraphicsDevice);
-            
             Rain = new Rain(Content, GraphicsDevice);
-            Rain.Initialize(1000f, 150f, -3f, 7000, 1.2f);
+            Rain.Initialize(100f, 150f, -3f, 500, 1f);
 
             _colliders = new BoundingBox[IslandsQuantity];
             
@@ -158,9 +157,11 @@ namespace TGC.MonoGame.TP
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Aqua);
+
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-            
-            Rain.Draw(gameTime, FollowCamera.View, FollowCamera.Projection);
+
+
+            Rain.Draw(gameTime, FollowCamera);
 
             Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
 

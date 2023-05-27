@@ -40,7 +40,7 @@ namespace TGC.MonoGame.TP.Entities
         {
             const float escala = 1000f;
             var world = Matrix.CreateScale(escala) * Matrix.CreateTranslation(0,0.0005f, 0);
-            
+
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             

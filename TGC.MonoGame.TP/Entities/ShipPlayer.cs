@@ -39,14 +39,16 @@ public class ShipPlayer
     private bool HasCollisioned { get; set; }
     private bool IsReactingToCollision { get; set; }
 
+    private GraphicsDevice GraphicsDevice { get; }
+
     // Uso el constructor como el Initialize
-    public ShipPlayer(TGCGame game)
+    public ShipPlayer(TGCGame game, GraphicsDevice graphicsDevice)
     {
         World = Matrix.Identity;
         Position = Vector3.Zero;
         Rotation = 0f;
-
         Game = game;
+        GraphicsDevice = graphicsDevice;
     }
 
     public void LoadContent(ContentManager content, Effect effect)
@@ -181,8 +183,8 @@ public class ShipPlayer
             new Vector2(0, 0), Color.Black);
         spriteBatch.End();
         
-        int index = 0;
-        
+        var index = 0;
+        GraphicsDevice.BlendState = BlendState.Opaque;
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
@@ -201,8 +203,14 @@ public class ShipPlayer
                 index++;
             }
         }
-        
+
         Game.Gizmos.DrawCube(OBBWorld, Color.Red);
+
+        spriteBatch.Begin();
+        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.00"), new Vector2(0, 20), Color.Black);
+        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (Velocities.Length - 2),
+            new Vector2(0, 0), Color.Black);
+        spriteBatch.End();
     }
 
     public void CheckCollision(BoundingBox boundingBox)

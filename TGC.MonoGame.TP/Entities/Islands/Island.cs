@@ -25,7 +25,7 @@ public class Island
 
         var tempBoundingBox = BoundingVolumesExtensions.CreateAABBFrom(Model);
         tempBoundingBox = BoundingVolumesExtensions.Scale(tempBoundingBox, scale);
-        var diff = (tempBoundingBox.Max - tempBoundingBox.Min)/1.5f;
+        var diff = (tempBoundingBox.Max - tempBoundingBox.Min)/2f;
         
         BoundingBox = BoundingVolumesExtensions.FromMatrix(Matrix.CreateScale(diff.Length()) * Matrix.CreateTranslation(translation));
         
