@@ -9,11 +9,11 @@ namespace TGC.MonoGame.TP.Entities
     /// </summary>
     public class Water
     {
-        public const string ContentFolderEffects = "Effects/";
-        public const string ContentFolderTextures = "Textures/";
-        public const int RowsOfQuads = 100;
-        private Quad Quad { get; }
+        private const string ContentFolderEffects = "Effects/";
+        private const string ContentFolderTextures = "Textures/";
+        private const int RowsOfQuads = 100;
         private GraphicsDevice GraphicsDevice { get; }
+        private Quad Quad { get; }
 
         public Water(GraphicsDevice graphicsDevice)
         {
@@ -21,10 +21,10 @@ namespace TGC.MonoGame.TP.Entities
             Quad = new Quad(graphicsDevice, RowsOfQuads);
         }
 
-        public void LoadContent(ContentManager Content)
+        public void LoadContent(ContentManager contentManager)
         {
-            var waterTexture = Content.Load<Texture2D>(ContentFolderTextures + "water");
-            var textureEffect = Content.Load<Effect>(ContentFolderEffects + "OceanShader");
+            var waterTexture = contentManager.Load<Texture2D>(ContentFolderTextures + "water");
+            var textureEffect = contentManager.Load<Effect>(ContentFolderEffects + "OceanShader");
             Quad.LoadContent(textureEffect, waterTexture);
         }
 
@@ -33,13 +33,17 @@ namespace TGC.MonoGame.TP.Entities
         /// Empieza a dibujar de izquierda a derecha. Por lo tanto si seteamos la posicion en 0. Va a empezar a dibujar hacia la izquierda
         /// (Todo esto basado en la camara que tenemos ahora, obviamente)
         /// </summary>
-        /// <param name="posicionInicial"></param>
         /// <param name="view"></param>
         /// <param name="projection"></param>
+        /// <param name="time"></param>
         public void Draw(Matrix view, Matrix projection, float time)
         {
-            float escala = 1000f;
-            Matrix world = Matrix.CreateScale(escala) * Matrix.CreateTranslation(0,0.0005f, 0);
+            const float escala = 1000f;
+            var world = Matrix.CreateScale(escala) * Matrix.CreateTranslation(0,0.0005f, 0);
+
+            GraphicsDevice.BlendState = BlendState.AlphaBlend;
+            GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+            
             Quad.Draw(world, view, projection, time);
         }
     }

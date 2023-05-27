@@ -1,7 +1,10 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.ComponentModel.Design.Serialization;
+using TGC.MonoGame.TP.Content.Gizmos;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
@@ -24,12 +27,21 @@ namespace TGC.MonoGame.TP
         private Camera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
         private Effect TextureShader { get; set; }
+        public Gizmos Gizmos { get; }
+        private const bool GizmosEnabled = false;
+        
+        private const int IslandsQuantity = 200;
+
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
+        private float Time { get; }
         private SpriteFont Font { get; set; }
 
-        private Rain rain;
+        private BoundingBox[] _colliders;
+
+        private Rain Rain { get; set; }
+        
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -42,8 +54,10 @@ namespace TGC.MonoGame.TP
             Graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 200;
             Graphics.GraphicsProfile = GraphicsProfile.HiDef;
 
-            IsMouseVisible = true;
-            IsFixedTimeStep = false;
+            IsMouseVisible = false;
+
+            Gizmos = new Gizmos();
+            Gizmos.Enabled = GizmosEnabled;
 
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
@@ -62,15 +76,19 @@ namespace TGC.MonoGame.TP
             // Esto se hace por un problema en el diseno del modelo del logo de la materia.
             // Una vez que empiecen su juego, esto no es mas necesario y lo pueden sacar.
             var rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
+            //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
-            Ship = new ShipPlayer();
-            IslandGenerator = new IslandGenerator();
-            Water = new Water(GraphicsDevice);
-            rain = new Rain(Content, GraphicsDevice);
-            rain.Initialize(1000f, 150f, -3f, 7000, 1.2f);
 
+
+            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
+            Ship = new ShipPlayer(this);
+            IslandGenerator = new IslandGenerator(this);
+            Water = new Water(GraphicsDevice);
+            Rain = new Rain(Content, GraphicsDevice);
+            Rain.Initialize(100f, 150f, -3f, 500, 1f);
+
+            _colliders = new BoundingBox[IslandsQuantity];
+            
             base.Initialize();
         }
 
@@ -82,13 +100,27 @@ namespace TGC.MonoGame.TP
         protected override void LoadContent()
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
+
             Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
+            
+            Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
+
+            // Load water
             Water.LoadContent(Content);
+            
+            // Load ship
             TextureShader = Content.Load<Effect>(ContentFolderEffects + "TextureShader");
             Ship.LoadContent(Content, TextureShader);
+
+            // Load islands
             IslandGenerator.LoadContent(Content, TextureShader);
-            Islands = IslandGenerator.CreateRandomIslands(200, 1500f, 1500f, .05f);
-            rain.Load();
+            Islands = IslandGenerator.CreateRandomIslands(IslandsQuantity, 2000, 2000, 50);
+            for (var i = 0; i < Islands.Length; i++)
+            {
+                _colliders[i] = Islands[i].BoundingBox;
+            }
+            
+            Rain.Load();
             base.LoadContent();
         }
 
@@ -99,13 +131,21 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
+            Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
+            
             // Capturar Input teclado
             if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
                 //Salgo del juego.
                 Exit();
             }
+
             Ship.Update(gameTime, FollowCamera);
+            foreach (var collider in _colliders)
+            {
+                Ship.CheckCollision(collider);
+            }
+
             base.Update(gameTime);
         }
 
@@ -115,14 +155,23 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Aqua);
-            Ship.Draw(FollowCamera, SpriteBatch, Font);
-            rain.Draw(gameTime, FollowCamera.View, FollowCamera.Projection);
+            GraphicsDevice.Clear(new Color(2, 5, 61));
+
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+
+            Rain.Draw(gameTime, FollowCamera);
+
+            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+
             foreach (var island in Islands)
             {
+                GraphicsDevice.BlendState = BlendState.Opaque;
                 island.Draw(FollowCamera.View, FollowCamera.Projection);
             }
-            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+
+            Ship.Draw(FollowCamera, SpriteBatch, Font);
+            Gizmos.Draw();
         }
 
         /// <summary>
@@ -132,6 +181,7 @@ namespace TGC.MonoGame.TP
         {
             // Libero los recursos.
             Content.Unload();
+            Gizmos.Dispose();
 
             base.UnloadContent();
         }

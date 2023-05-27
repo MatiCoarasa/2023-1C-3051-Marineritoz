@@ -95,6 +95,7 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="world">The world matrix for this box.</param>
         /// <param name="view">The view matrix, normally from the camera.</param>
         /// <param name="projection">The projection matrix, normally from the application.</param>
+        /// <param name="time">Time in second since the game started</param>
         public void Draw(Matrix world, Matrix view, Matrix projection, float time)
         {
             Effect.Parameters["World"].SetValue(world);
@@ -118,13 +119,12 @@ namespace TGC.MonoGame.TP.Entities
             // Set our vertex declaration, vertex buffer, and index buffer.
             graphicsDevice.SetVertexBuffer(Vertices);
             graphicsDevice.Indices = Indices;
-            graphicsDevice.BlendState = BlendState.Additive;
+
             foreach (var effectPass in effect.CurrentTechnique.Passes)
             {
                 effectPass.Apply();
                 graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, Indices.IndexCount / 3);
             }
-            graphicsDevice.BlendState = BlendState.Opaque;
         }
     }
 }
