@@ -50,22 +50,22 @@ public class IslandGenerator
         return new Island(Game, IslandsModel[modelNumber], Effect, IslandsTextures[modelNumber], scale, translation);
     }
 
-    public Island[] CreateRandomIslands(int qty, float maxX, float maxZ)
+    public Island[] CreateRandomIslands(int qty, float maxX, float maxZ, float spawnBoxSize)
     {
         Debug.WriteLine("[CreateRandomIslands] qty: " + qty + " maxX: " + maxX + " maxZ: " + maxZ);
         var islands = new Island[qty];
 
         for (var i = 0; i < qty; i++)
         {
-            islands[i] = CreateIslandInFreeSpace(islands, i, maxX, maxZ);
+            islands[i] = CreateIslandInFreeSpace(islands, i, maxX, maxZ, spawnBoxSize);
         }
 
         return islands;
     }
 
-    private Island CreateIslandInFreeSpace(Island[] existingIslands, int currentIndex, float maxX, float maxZ)
+    private Island CreateIslandInFreeSpace(Island[] existingIslands, int currentIndex, float maxX, float maxZ, float spawnBoxSize)
     {
-        var spawnBb = new BoundingBox(new Vector3(-20, -20, -20), new Vector3(20, 20, 20));
+        var spawnBb = new BoundingBox(new Vector3(-spawnBoxSize, -spawnBoxSize, -spawnBoxSize), new Vector3(spawnBoxSize, spawnBoxSize, spawnBoxSize));
         while (true)
         {
             var islandVector = GetRandomPosition(maxX, maxZ);

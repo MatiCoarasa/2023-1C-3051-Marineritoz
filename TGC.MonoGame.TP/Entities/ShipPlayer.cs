@@ -39,16 +39,13 @@ public class ShipPlayer
     private bool HasCollisioned { get; set; }
     private bool IsReactingToCollision { get; set; }
 
-    private GraphicsDevice GraphicsDevice { get; }
-
     // Uso el constructor como el Initialize
-    public ShipPlayer(TGCGame game, GraphicsDevice graphicsDevice)
+    public ShipPlayer(TGCGame game)
     {
         World = Matrix.Identity;
         Position = Vector3.Zero;
         Rotation = 0f;
         Game = game;
-        GraphicsDevice = graphicsDevice;
     }
 
     public void LoadContent(ContentManager content, Effect effect)
@@ -184,7 +181,7 @@ public class ShipPlayer
         spriteBatch.End();
         
         var index = 0;
-        GraphicsDevice.BlendState = BlendState.Opaque;
+        Game.GraphicsDevice.BlendState = BlendState.Opaque;
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
