@@ -13,6 +13,7 @@ namespace TGC.MonoGame.TP.Entities;
 public class ShipPlayer
 {
     private const string ContentFolder3D = "Models/";
+    private TGCGame Game { get; set; }
     private Model Model { get; set; }
     private Effect Effect { get; set; }
     private Matrix World { get; set; }
@@ -25,7 +26,7 @@ public class ShipPlayer
     // Cambios del barco
     // -1, 0, 1, 2, 3, 4 
     private float CurrentVelocity { get; set; }
-    private float[] Velocities { get; } = {-20f, 0f, 5f, 10f, 15f, 20f};
+    private float[] Velocities { get; } = {-20f, 0f, 10f, 20f, 30f, 40f};
     private int CurrentVelocityIndex { get; set; } = 1;
     private float LastVelocityChangeTimer { get; set; }
     private float MinimumSecsBetweenVelocityChanges { get; } = .5f;
@@ -33,17 +34,21 @@ public class ShipPlayer
     private float Rotation { get; set; }
     private float RotationVelocity { get; } = 1f;
 
-    private float Acceleration { get; } = 1f;
+    private float Acceleration { get; } = 3f;
 
-    public OrientedBoundingBox BoundingBox;
+    private Matrix OBBWorld;
+    public OrientedBoundingBox ShipBoundingBox;
+    private bool HasCollisioned { get; set; }
+    private bool IsReactingToCollision { get; set; }
 
     // Uso el constructor como el Initialize
-    public ShipPlayer()
+    public ShipPlayer(TGCGame game)
     {
         World = Matrix.Identity;
         Position = Vector3.Zero;
         Rotation = 0f;
-        
+
+        Game = game;
     }
 
     public void LoadContent(ContentManager content, Effect effect)
@@ -54,9 +59,9 @@ public class ShipPlayer
         // Set Ship oriented bounding box
         var tempAABB = BoundingVolumesExtensions.CreateAABBFrom(Model);
         tempAABB = BoundingVolumesExtensions.Scale(tempAABB, Scale);
-        BoundingBox = OrientedBoundingBox.FromAABB(tempAABB);
-        BoundingBox.Center = Position;
-        BoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
+        ShipBoundingBox = OrientedBoundingBox.FromAABB(tempAABB);
+        ShipBoundingBox.Center = Position;
+        ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
         
         foreach (var mesh in Model.Meshes)
         {
@@ -78,22 +83,42 @@ public class ShipPlayer
         var keyboardState = Keyboard.GetState();
         
         var deltaRotation = ResolveShipRotation(deltaTime, keyboardState);
-        BoundingBox.Rotate(Matrix.CreateRotationY(deltaRotation));
+        ShipBoundingBox.Rotate(Matrix.CreateRotationY(deltaRotation));
 
         var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
-        BoundingBox.Center += deltaPosition;
+        ShipBoundingBox.Center += deltaPosition;
             
-        World = Matrix.CreateScale(Scale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
+        World = OBBWorld = Matrix.CreateScale(Scale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
         
         followCamera.Update(gameTime, World);
     }
 
     private Vector3 ResolveShipMovement(float deltaTime, KeyboardState keyboardState)
     {
-        float targetVelocity = Velocities[CurrentVelocityIndex];
-        if (targetVelocity == 0f && Math.Abs(CurrentVelocity) < 0.01)
+        // Logica de rebote si hay colision
+        if (HasCollisioned)
         {
-            CurrentVelocity = 0;
+            if (IsReactingToCollision)
+            {
+                CurrentVelocity += -Math.Abs(CurrentVelocity)/CurrentVelocity * Acceleration * deltaTime;
+            }
+            else
+            {
+                IsReactingToCollision = true;
+                CurrentVelocity = -CurrentVelocity / 3f;
+            }
+
+            if (Math.Abs(CurrentVelocity) < 0.1)
+            {
+                IsReactingToCollision = false;
+                HasCollisioned = false;
+            }
+        }
+        
+        var targetVelocity = Velocities[CurrentVelocityIndex];
+        if (Math.Abs(CurrentVelocity - targetVelocity) < .1f)
+        {
+            CurrentVelocity = targetVelocity;
         }
         else if (CurrentVelocity < targetVelocity)
         {
@@ -130,7 +155,7 @@ public class ShipPlayer
     {
         // Si el barco no esta en movimiento, no rota
         if (CurrentVelocity == 0f) return 0f;
-
+        
         // Si se mueve para adelante rota en un sentido. Si esta yendo para atras, rota en sentido contrario.
         var preRotation = Rotation;
         if (keyboardState.IsKeyDown(Keys.A))
@@ -150,12 +175,14 @@ public class ShipPlayer
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
         var modelMeshesBaseTransforms = new Matrix[Model.Bones.Count];
         Model.CopyAbsoluteBoneTransformsTo(modelMeshesBaseTransforms);
-        
+
+        // TODO: mover a otro modulo
         spriteBatch.Begin();
         spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.00"), new Vector2(0, 20), Color.Black);
         spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (Velocities.Length - 2), 
             new Vector2(0, 0), Color.Black);
         spriteBatch.End();
+        
         
         int index = 0;
         
@@ -167,5 +194,18 @@ public class ShipPlayer
             mesh.Draw();
             index++;
         }
+        
+        Game.Gizmos.DrawCube(OBBWorld, Color.Red);
     }
+
+    public void CheckCollision(BoundingBox boundingBox)
+    {
+        if (CurrentVelocity == 0f) return;
+        
+        if (ShipBoundingBox.Intersects(boundingBox))
+        {
+            HasCollisioned = true;
+        }
+    }
+    
 }

@@ -13,11 +13,9 @@ namespace TGC.MonoGame.TP.Entities
         private const string ContentFolderTextures = "Textures/";
         private const int RowsOfQuads = 100;
         private Quad Quad { get; }
-        private GraphicsDevice _graphicsDevice;
 
         public Water(GraphicsDevice graphicsDevice)
         {
-            _graphicsDevice = graphicsDevice;
             Quad = new Quad(graphicsDevice, RowsOfQuads);
         }
 

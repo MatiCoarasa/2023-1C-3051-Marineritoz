@@ -7,26 +7,29 @@ namespace TGC.MonoGame.TP.Entities.Islands;
 
 public class Island
 { 
+    private TGCGame Game { get; set; }
     private Model Model { get; set; }
     private Effect Effect { get; set; }
     private Matrix World { get; set; }
     private IList<Texture2D> Textures { get; set; }
     public BoundingBox BoundingBox;
 
-    public Island(Model model, Effect effect, IList<Texture2D> textures, float scale, Vector3 translation)
+    public Island(TGCGame game, Model model, Effect effect, IList<Texture2D> textures, float scale, Vector3 translation)
     {
+        Game = game; 
         Model = model;
         Effect = effect;
         Textures = textures;
 
         World = Matrix.CreateScale(scale) * Matrix.CreateTranslation(translation);
 
-        BoundingBox = BoundingVolumesExtensions.CreateAABBFrom(Model);
-        Debug.WriteLine("Bounding box center pre scale: " + BoundingVolumesExtensions.GetCenter(BoundingBox));
-        BoundingBox = BoundingVolumesExtensions.Scale(BoundingBox, scale);
-
-        var blabla = new Vector3(translation.X, -BoundingVolumesExtensions.GetCenter(BoundingBox).Y, translation.Z);
-        BoundingBox = new BoundingBox(BoundingBox.Min + blabla, BoundingBox.Max + blabla);
+        var tempBoundingBox = BoundingVolumesExtensions.CreateAABBFrom(Model);
+        tempBoundingBox = BoundingVolumesExtensions.Scale(tempBoundingBox, scale);
+        var diff = (tempBoundingBox.Max - tempBoundingBox.Min)/1.5f;
+        
+        BoundingBox = BoundingVolumesExtensions.FromMatrix(Matrix.CreateScale(diff.Length()) * Matrix.CreateTranslation(translation));
+        
+        // BoundingBox = new BoundingBox(BoundingBox.Min + translation, BoundingBox.Max + translation);
         Debug.WriteLine("Created island bounding box: " + BoundingBox.Min + " - " + BoundingBox.Max);
         Debug.WriteLine("Scale: " + scale + " - Translation: " + translation);
     }
@@ -35,17 +38,17 @@ public class Island
     {
         Effect.Parameters["View"].SetValue(view);
         Effect.Parameters["Projection"].SetValue(projection);
-        int index = 0;
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
-            foreach (var meshPart in mesh.MeshParts)
+            for (var index = 0; index < mesh.MeshParts.Count; index++)
             {
                 var meshPartColorTexture = Textures[index];
                 Effect.Parameters["ModelTexture"].SetValue(meshPartColorTexture);
                 mesh.Draw();
-                index++;
             }
         }
+
+        Game.Gizmos.DrawCube(BoundingVolumesExtensions.GetCenter(BoundingBox), BoundingVolumesExtensions.GetExtents(BoundingBox) * 2f, Color.Red);
     }
 }
