@@ -38,17 +38,29 @@ public class Island
     {
         Effect.Parameters["View"].SetValue(view);
         Effect.Parameters["Projection"].SetValue(projection);
+        var index = 0;
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
-            for (var index = 0; index < mesh.MeshParts.Count; index++)
+            foreach (var meshPart in mesh.MeshParts)
             {
+                meshPart.Effect.GraphicsDevice.SetVertexBuffer(meshPart.VertexBuffer);
+                meshPart.Effect.GraphicsDevice.Indices = meshPart.IndexBuffer;
                 var meshPartColorTexture = Textures[index];
                 Effect.Parameters["ModelTexture"].SetValue(meshPartColorTexture);
-                mesh.Draw();
+                foreach (var pass in Effect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    meshPart.Effect.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex,
+                        meshPart.PrimitiveCount);
+                }
+
+                index++;
             }
         }
 
-        Game.Gizmos.DrawCube(BoundingVolumesExtensions.GetCenter(BoundingBox), BoundingVolumesExtensions.GetExtents(BoundingBox) * 2f, Color.Red);
+        var bbCenter = BoundingVolumesExtensions.GetCenter(BoundingBox);
+        var bbExtents = BoundingVolumesExtensions.GetExtents(BoundingBox);
+        Game.Gizmos.DrawCube(bbCenter, bbExtents * 2f, Color.Red);
     }
 }

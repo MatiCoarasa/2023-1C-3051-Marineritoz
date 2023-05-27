@@ -3,9 +3,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Diagnostics;
-using TGC.MonoGame.TP.Camera;
+using System.ComponentModel.Design.Serialization;
 using TGC.MonoGame.TP.Content.Gizmos;
+using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
 
@@ -24,10 +24,11 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderSounds = "Sounds/";
         public const string ContentFolderSpriteFonts = "Fonts/";
         public const string ContentFolderTextures = "Textures/";
-        private FollowCamera FollowCamera { get; set; }
+        private Camera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
         private Effect TextureShader { get; set; }
         public Gizmos Gizmos { get; }
+        private const bool GizmosEnabled = false;
         
         private const int IslandsQuantity = 200;
 
@@ -38,6 +39,8 @@ namespace TGC.MonoGame.TP
         private SpriteFont Font { get; set; }
 
         private BoundingBox[] _colliders;
+
+        private Rain Rain { get; set; }
         
         /// <summary>
         ///     Constructor del juego.
@@ -53,8 +56,9 @@ namespace TGC.MonoGame.TP
 
             IsMouseVisible = true;
             IsFixedTimeStep = false;
-            
+
             Gizmos = new Gizmos();
+            Gizmos.Enabled = GizmosEnabled;
 
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
@@ -75,12 +79,16 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
+
+
+            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
-            
             IslandGenerator = new IslandGenerator(this);
             Water = new Water(GraphicsDevice);
             
+            Rain = new Rain(Content, GraphicsDevice);
+            Rain.Initialize(1000f, 150f, -3f, 7000, 1.2f);
+
             _colliders = new BoundingBox[IslandsQuantity];
             
             base.Initialize();
@@ -94,11 +102,11 @@ namespace TGC.MonoGame.TP
         protected override void LoadContent()
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
-            
+
             Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
             
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
-            
+
             // Load water
             Water.LoadContent(Content);
             
@@ -114,6 +122,7 @@ namespace TGC.MonoGame.TP
                 _colliders[i] = Islands[i].BoundingBox;
             }
             
+            Rain.Load();
             base.LoadContent();
         }
 
@@ -149,15 +158,19 @@ namespace TGC.MonoGame.TP
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Aqua);
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             
-            Ship.Draw(FollowCamera, SpriteBatch, Font);
-            Water.Draw(FollowCamera.View, FollowCamera.Projection, Time);
+            Rain.Draw(gameTime, FollowCamera.View, FollowCamera.Projection);
+
+            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
 
             foreach (var island in Islands)
             {
+                GraphicsDevice.BlendState = BlendState.Opaque;
                 island.Draw(FollowCamera.View, FollowCamera.Projection);
             }
-            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+
+            Ship.Draw(FollowCamera, SpriteBatch, Font);
             Gizmos.Draw();
         }
 

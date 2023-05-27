@@ -12,10 +12,12 @@ namespace TGC.MonoGame.TP.Entities
         private const string ContentFolderEffects = "Effects/";
         private const string ContentFolderTextures = "Textures/";
         private const int RowsOfQuads = 100;
+        private GraphicsDevice GraphicsDevice { get; }
         private Quad Quad { get; }
 
         public Water(GraphicsDevice graphicsDevice)
         {
+            GraphicsDevice = graphicsDevice;
             Quad = new Quad(graphicsDevice, RowsOfQuads);
         }
 
@@ -36,8 +38,12 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="time"></param>
         public void Draw(Matrix view, Matrix projection, float time)
         {
-            const float escala = 10f;
+            const float escala = 1000f;
             var world = Matrix.CreateScale(escala) * Matrix.CreateTranslation(0,0.0005f, 0);
+            
+            GraphicsDevice.BlendState = BlendState.AlphaBlend;
+            GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+            
             Quad.Draw(world, view, projection, time);
         }
     }
