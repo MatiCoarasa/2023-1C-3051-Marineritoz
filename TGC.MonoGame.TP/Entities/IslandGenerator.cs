@@ -12,6 +12,7 @@ public class IslandGenerator
 {
     private const string ContentFolder3D = "Models/";
     private TGCGame Game { get; set; }
+    private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
     private IList<Model> IslandsModel { get; set; } = new List<Model>();
     private IList<IList<Texture2D>> IslandsTextures { get; set; } = new List<IList<Texture2D>>(); 
     private Effect Effect { get; set; }
@@ -69,7 +70,7 @@ public class IslandGenerator
         while (true)
         {
             var islandVector = GetRandomPosition(maxX, maxZ);
-            var islandScale = (Rnd.NextSingle() + .2f) / 100;
+            var islandScale = Math.Clamp(Rnd.NextSingle() + .25f, GlobalConfig.IslandsMinScale, GlobalConfig.IslandsMaxScale) * .04f;
         
             var islandCandidate = CreateIsland(Rnd.Next(_islandPaths.Length), islandScale, islandVector);
 

@@ -3,7 +3,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.ComponentModel.Design.Serialization;
 using TGC.MonoGame.TP.Content.Gizmos;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
@@ -30,8 +29,6 @@ namespace TGC.MonoGame.TP
         public Gizmos Gizmos { get; }
         private const bool GizmosEnabled = false;
         
-        private const int IslandsQuantity = 200;
-
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
@@ -41,6 +38,8 @@ namespace TGC.MonoGame.TP
         private BoundingBox[] _colliders;
 
         private Rain Rain { get; set; }
+
+        private GlobalConfigurationSingleton GlobalConfig { get; }
         
         /// <summary>
         ///     Constructor del juego.
@@ -59,6 +58,8 @@ namespace TGC.MonoGame.TP
             Gizmos = new Gizmos();
             Gizmos.Enabled = GizmosEnabled;
 
+            GlobalConfig = GlobalConfigurationSingleton.GetInstance();
+
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
         }
@@ -72,11 +73,7 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Initialize()
         {
-            // Apago el backface culling.
-            // Esto se hace por un problema en el diseno del modelo del logo de la materia.
-            // Una vez que empiecen su juego, esto no es mas necesario y lo pueden sacar.
             var rasterizerState = new RasterizerState();
-            //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
 
 
@@ -85,9 +82,9 @@ namespace TGC.MonoGame.TP
             IslandGenerator = new IslandGenerator(this);
             Water = new Water(GraphicsDevice);
             Rain = new Rain(Content, GraphicsDevice);
-            Rain.Initialize(100f, 150f, -3f, 500, 1f);
+            Rain.Initialize(GlobalConfig.RainSize, GlobalConfig.RainMaxHeight, GlobalConfig.RainMinHeight, GlobalConfig.RainDropCount, GlobalConfig.RainSpeedDrop);
 
-            _colliders = new BoundingBox[IslandsQuantity];
+            _colliders = new BoundingBox[GlobalConfig.IslandsQuantity];
             
             base.Initialize();
         }
@@ -114,7 +111,7 @@ namespace TGC.MonoGame.TP
 
             // Load islands
             IslandGenerator.LoadContent(Content, TextureShader);
-            Islands = IslandGenerator.CreateRandomIslands(IslandsQuantity, 2000, 2000, 50);
+            Islands = IslandGenerator.CreateRandomIslands(GlobalConfig.IslandsQuantity, GlobalConfig.IslandsMaxXSpawn, GlobalConfig.IslandsMaxZSpawn, GlobalConfig.SpawnBoxSize);
             for (var i = 0; i < Islands.Length; i++)
             {
                 _colliders[i] = Islands[i].BoundingBox;
@@ -155,7 +152,7 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(new Color(2, 5, 61));
+            GraphicsDevice.Clear(GlobalConfig.SkyColor);
 
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 

@@ -18,21 +18,17 @@ public class ShipPlayer
 
     private IList<Texture2D> ColorTextures { get; } = new List<Texture2D>();
 
-    private const float Scale = 0.00025f;
+    private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
+
     private Vector3 Position { get; set; }
 
     // Cambios del barco
     // -1, 0, 1, 2, 3, 4 
     private float CurrentVelocity { get; set; }
-    private float[] Velocities { get; } = {-20f, 0f, 10f, 20f, 30f, 40f};
     private int CurrentVelocityIndex { get; set; } = 1;
     private float LastVelocityChangeTimer { get; set; }
-    private const float MinimumSecsBetweenVelocityChanges = .5f;
     
     private float Rotation { get; set; }
-    private const float RotationVelocity = 1f;
-
-    private const float Acceleration = 3f;
 
     private Matrix OBBWorld { get; set; }
     private OrientedBoundingBox ShipBoundingBox { get; set; }
@@ -55,7 +51,7 @@ public class ShipPlayer
         
         // Set Ship oriented bounding box
         var tempAABB = BoundingVolumesExtensions.CreateAABBFrom(Model);
-        tempAABB = BoundingVolumesExtensions.Scale(tempAABB, Scale);
+        tempAABB = BoundingVolumesExtensions.Scale(tempAABB, GlobalConfig.PlayerScale);
         ShipBoundingBox = OrientedBoundingBox.FromAABB(tempAABB);
         ShipBoundingBox.Center = Position;
         ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
@@ -85,7 +81,7 @@ public class ShipPlayer
         var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
         ShipBoundingBox.Center += deltaPosition;
             
-        World = OBBWorld = Matrix.CreateScale(Scale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
+        World = OBBWorld = Matrix.CreateScale(GlobalConfig.PlayerScale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
 
         followCamera.Update(gameTime, World);
     }
@@ -97,7 +93,7 @@ public class ShipPlayer
         {
             if (IsReactingToCollision)
             {
-                CurrentVelocity += -Math.Abs(CurrentVelocity)/CurrentVelocity * Acceleration * deltaTime;
+                CurrentVelocity += -Math.Abs(CurrentVelocity)/CurrentVelocity * GlobalConfig.PlayerAcceleration * deltaTime;
             }
             else
             {
@@ -112,31 +108,29 @@ public class ShipPlayer
             }
         }
         
-        var targetVelocity = Velocities[CurrentVelocityIndex];
+        var targetVelocity = GlobalConfig.PlayerVelocities[CurrentVelocityIndex];
         if (Math.Abs(CurrentVelocity - targetVelocity) < .1f)
         {
             CurrentVelocity = targetVelocity;
         }
-        else if (CurrentVelocity < targetVelocity)
+        else
         {
-            CurrentVelocity += Acceleration * deltaTime;
-        } else if (CurrentVelocity > targetVelocity)
-        {
-            CurrentVelocity -= Acceleration * deltaTime;
+            CurrentVelocity += Math.Sign(targetVelocity - CurrentVelocity) * GlobalConfig.PlayerAcceleration * deltaTime;
         }
+
 
         var prePositionChange = Position;
         Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * CurrentVelocity;
         var deltaPosition = Position - prePositionChange;
 
-        if (LastVelocityChangeTimer < MinimumSecsBetweenVelocityChanges) return deltaPosition;
+        if (LastVelocityChangeTimer < GlobalConfig.PlayerSecsBetweenChanges) return deltaPosition;
         
         if (keyboardState.IsKeyDown(Keys.W))
         {
             LastVelocityChangeTimer = 0f;
             
             // No permito que 'CurrentVelocityIndex' supere el indice de velocidad maxima (Velocities.Length - 1)
-            CurrentVelocityIndex = Math.Min(CurrentVelocityIndex + 1, Velocities.Length - 1);
+            CurrentVelocityIndex = Math.Min(CurrentVelocityIndex + 1, GlobalConfig.PlayerVelocities.Length - 1);
         } else if (keyboardState.IsKeyDown(Keys.S))
         {
             LastVelocityChangeTimer = 0f;
@@ -158,11 +152,11 @@ public class ShipPlayer
 
         if (keyboardState.IsKeyDown(Keys.A))
         {
-            Rotation += deltaTime * RotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
+            Rotation += deltaTime * GlobalConfig.PlayerMaxRotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
         }
         if (keyboardState.IsKeyDown(Keys.D))
         {
-            Rotation -= deltaTime * RotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
+            Rotation -= deltaTime * GlobalConfig.PlayerMaxRotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
         }
 
         return Rotation - preRotation;
@@ -173,13 +167,6 @@ public class ShipPlayer
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
 
-        // TODO: mover a otro modulo
-        spriteBatch.Begin();
-        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.00"), new Vector2(0, 20), Color.Black);
-        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (Velocities.Length - 2), 
-            new Vector2(0, 0), Color.Black);
-        spriteBatch.End();
-        
         var index = 0;
         Game.GraphicsDevice.BlendState = BlendState.Opaque;
         foreach (var mesh in Model.Meshes)
@@ -204,9 +191,9 @@ public class ShipPlayer
         Game.Gizmos.DrawCube(OBBWorld, Color.Red);
 
         spriteBatch.Begin();
-        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.00"), new Vector2(0, 20), Color.Black);
-        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (Velocities.Length - 2),
-            new Vector2(0, 0), Color.Black);
+        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.0"), new Vector2(0, 20), Color.White);
+        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (GlobalConfig.PlayerVelocities.Length - 2),
+            new Vector2(0, 0), Color.White);
         spriteBatch.End();
     }
 
