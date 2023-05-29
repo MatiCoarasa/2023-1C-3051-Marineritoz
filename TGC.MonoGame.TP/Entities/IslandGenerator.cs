@@ -11,11 +11,20 @@ namespace TGC.MonoGame.TP.Entities;
 public class IslandGenerator
 {
     private const string ContentFolder3D = "Models/";
+    private TGCGame Game { get; set; }
     private IList<Model> IslandsModel { get; set; } = new List<Model>();
     private IList<IList<Texture2D>> IslandsTextures { get; set; } = new List<IList<Texture2D>>(); 
     private Effect Effect { get; set; }
+    private Random Rnd { get; set; }
+
     
-    string[] _islandPaths = { "Island1/Island1", "Island2/Island2", "Island3/Island3" };
+    private readonly string[] _islandPaths = { "Island1/Island1", "Island2/Island2", "Island3/Island3" };
+
+    public IslandGenerator(TGCGame game)
+    {
+        Game = game;
+        Rnd = new Random();
+    }
 
     public void LoadContent(ContentManager content, Effect effect)
     {
@@ -36,37 +45,56 @@ public class IslandGenerator
         }
     }
 
-    private Island Create(int modelNumber, Vector3 translation, float scale, float rotation = 0)
+    private Island CreateIsland(int modelNumber, float scale, Vector3 translation)
     {
-        Matrix world = Matrix.CreateScale(scale) * Matrix.CreateRotationY(rotation) *  Matrix.CreateTranslation(translation);
-        return new Island(IslandsModel[modelNumber], world, Effect, IslandsTextures[modelNumber]);
+        return new Island(Game, IslandsModel[modelNumber], Effect, IslandsTextures[modelNumber], scale, translation);
     }
 
-    public Island[] CreateRandomIslands(int qty, float maxX, float maxZ, float noSpawnRadius)
+    public Island[] CreateRandomIslands(int qty, float maxX, float maxZ, float spawnBoxSize)
     {
         Debug.WriteLine("[CreateRandomIslands] qty: " + qty + " maxX: " + maxX + " maxZ: " + maxZ);
-        Island[] islands = new Island[qty];
+        var islands = new Island[qty];
 
-        Random rnd = new Random();
-        for (int i = 0; i < qty; i++)
+        for (var i = 0; i < qty; i++)
         {
-            // Resto .5f para "centralizar" el punto de origen de las islas.
-            var rndX = rnd.NextSingle() - .5f;
-            var rndZ = rnd.NextSingle() - .5f;
-
-            rndX += Math.Sign(rndX) * noSpawnRadius;
-            rndZ += Math.Sign(rndZ) * noSpawnRadius;
-            
-            float islandX = rndX * maxX;
-            float islandZ = rndZ * maxZ;
-            Vector3 islandVector = new Vector3(islandX, 0, islandZ);
-            Debug.WriteLine("[Creating Island " + i + "] " + islandVector);
-
-            float islandScale = rnd.NextSingle() / 100;
-            float islandRotation = rnd.NextSingle() * Convert.ToSingle(Math.PI) * 2f;
-            islands[i] = Create(rnd.Next(_islandPaths.Length), new Vector3(islandX, 0, islandZ), islandScale, islandRotation);
+            islands[i] = CreateIslandInFreeSpace(islands, i, maxX, maxZ, spawnBoxSize);
         }
 
         return islands;
+    }
+
+    private Island CreateIslandInFreeSpace(Island[] existingIslands, int currentIndex, float maxX, float maxZ, float spawnBoxSize)
+    {
+        var spawnBb = new BoundingBox(new Vector3(-spawnBoxSize, -spawnBoxSize, -spawnBoxSize), new Vector3(spawnBoxSize, spawnBoxSize, spawnBoxSize));
+        while (true)
+        {
+            var islandVector = GetRandomPosition(maxX, maxZ);
+            var islandScale = (Rnd.NextSingle() + .2f) / 100;
+        
+            var islandCandidate = CreateIsland(Rnd.Next(_islandPaths.Length), islandScale, islandVector);
+
+            // Chequear colision con todas las islas existentes
+            var islandCollisions = false;
+            for (var i = 0; i < currentIndex; i++)
+            {
+                var existingIsland = existingIslands[i];
+                if (islandCandidate.BoundingBox.Intersects(spawnBb) || islandCandidate.BoundingBox.Intersects(existingIsland.BoundingBox))
+                {
+                    islandCollisions = true;
+                    break;
+                }
+            }
+            
+            if (!islandCollisions) return islandCandidate;
+        }
+    }
+
+    private Vector3 GetRandomPosition(float maxX, float maxZ)
+    {
+        // Resto .5f para "centralizar" el punto de origen de las islas.
+        var islandX = (Rnd.NextSingle() - .5f) * maxX;
+        var islandZ = (Rnd.NextSingle() - .5f) * maxZ; 
+
+        return new Vector3(islandX, 0, islandZ);
     }
 }
