@@ -33,9 +33,9 @@ public class GlobalConfigurationSingleton
 
     // Player Ship config
     public float PlayerScale => .00025f;
-    public float[] PlayerVelocities { get; } = {-20, 0, 1000, 20, 30, 40};  // Lista de 5 cambios de velocidad
+    public float[] PlayerVelocities { get; } = {-20, 0, 10, 20, 30, 40};  // Lista de 5 cambios de velocidad
     public float PlayerSecsBetweenChanges = .5f;  // Tiempo de bloqueo entre cambios del barco
     public float PlayerMaxRotationVelocity = 1;
-    public float PlayerAcceleration = 10;
+    public float PlayerAcceleration = 2;
     
 }
