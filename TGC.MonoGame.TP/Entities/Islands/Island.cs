@@ -20,16 +20,15 @@ public class Island
         Model = model;
         Effect = effect;
         Textures = textures;
+        
+        var tempBoundingBox = BoundingVolumesExtensions.CreateAABBFrom(Model);
 
         World = Matrix.CreateScale(scale) * Matrix.CreateTranslation(translation);
 
-        var tempBoundingBox = BoundingVolumesExtensions.CreateAABBFrom(Model);
-        tempBoundingBox = BoundingVolumesExtensions.Scale(tempBoundingBox, scale);
-        var diff = (tempBoundingBox.Max - tempBoundingBox.Min)/2f;
-        
-        BoundingBox = BoundingVolumesExtensions.FromMatrix(Matrix.CreateScale(diff.Length()) * Matrix.CreateTranslation(translation));
-        
-        // BoundingBox = new BoundingBox(BoundingBox.Min + translation, BoundingBox.Max + translation);
+        BoundingBox = BoundingVolumesExtensions.ScaleCentered(tempBoundingBox, scale - scale/3);
+        BoundingBox.Min += translation;
+        BoundingBox.Max += translation;
+
         Debug.WriteLine("Created island bounding box: " + BoundingBox.Min + " - " + BoundingBox.Max);
         Debug.WriteLine("Scale: " + scale + " - Translation: " + translation);
     }
@@ -38,6 +37,7 @@ public class Island
     {
         Effect.Parameters["View"].SetValue(view);
         Effect.Parameters["Projection"].SetValue(projection);
+        
         var index = 0;
         foreach (var mesh in Model.Meshes)
         {
@@ -54,7 +54,7 @@ public class Island
                     meshPart.Effect.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, meshPart.VertexOffset, meshPart.StartIndex,
                         meshPart.PrimitiveCount);
                 }
-
+        
                 index++;
             }
         }
