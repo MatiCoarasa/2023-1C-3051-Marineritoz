@@ -13,7 +13,7 @@ public class IslandGenerator
     private const string ContentFolder3D = "Models/";
     private TGCGame Game { get; set; }
     private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
-    private IList<Model> IslandsModel { get; set; } = new List<Model>();
+    private IList<Model> IslandsModels { get; set; } = new List<Model>();
     private IList<IList<Texture2D>> IslandsTextures { get; set; } = new List<IList<Texture2D>>(); 
     private Effect Effect { get; set; }
     private Random Rnd { get; set; }
@@ -42,13 +42,13 @@ public class IslandGenerator
                     meshPart.Effect = Effect;
                 }
             }
-            IslandsModel.Add(model);
+            IslandsModels.Add(model);
         }
     }
 
     private Island CreateIsland(int modelNumber, float scale, Vector3 translation)
     {
-        return new Island(Game, IslandsModel[modelNumber], Effect, IslandsTextures[modelNumber], scale, translation);
+        return new Island(Game, IslandsModels[modelNumber], Effect, IslandsTextures[modelNumber], scale, translation);
     }
 
     public Island[] CreateRandomIslands(int qty, float maxX, float maxZ, float spawnBoxSize)
@@ -66,6 +66,7 @@ public class IslandGenerator
 
     private Island CreateIslandInFreeSpace(Island[] existingIslands, int currentIndex, float maxX, float maxZ, float spawnBoxSize)
     {
+        // Creo una Bounding Box en el origen del tamanio indicado por parametro
         var spawnBb = new BoundingBox(new Vector3(-spawnBoxSize, -spawnBoxSize, -spawnBoxSize), new Vector3(spawnBoxSize, spawnBoxSize, spawnBoxSize));
         while (true)
         {

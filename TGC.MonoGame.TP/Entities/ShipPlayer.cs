@@ -188,7 +188,7 @@ public class ShipPlayer
             }
         }
 
-        Game.Gizmos.DrawCube(OBBWorld, Color.Red);
+        Game.Gizmos.DrawCube(OBBWorld * 2, Color.Red);
 
         spriteBatch.Begin();
         spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.0"), new Vector2(0, 20), Color.White);

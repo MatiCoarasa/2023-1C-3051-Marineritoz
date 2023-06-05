@@ -59,7 +59,20 @@ namespace TGC.MonoGame.TP.Entities
 
             return new BoundingBox(center - scaledExtents, center + scaledExtents);
         }
-
+        
+        /// <summary>
+        ///     Scales the box relative to the origin of coordinates.
+        /// </summary>
+        /// <param name="scale">The scale for every axis</param>
+        /// <param name="box">The <see cref="BoundingBox"/> to scale</param>
+        /// <returns>A new box with its extents scaled and centered on (0, 0, 0)</returns>
+        public static BoundingBox ScaleCentered(BoundingBox box, float scale)
+        {  
+            var extents = GetExtents(box);
+            var scaledExtents = extents * scale;
+            return new BoundingBox(-scaledExtents, scaledExtents);
+        }
+        
         /// <summary>
         ///     Scales the box by a given scalar per axis.
         /// </summary>
