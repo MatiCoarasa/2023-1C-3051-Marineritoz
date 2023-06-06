@@ -28,7 +28,7 @@ namespace TGC.MonoGame.TP
         private ShipPlayer Ship { get; set; }
         private Effect TextureShader { get; set; }
         public Gizmos Gizmos { get; }
-        private const bool GizmosEnabled = false;
+        private const bool GizmosEnabled = true;
         
         private const int IslandsQuantity = 200;
 
@@ -155,7 +155,7 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(new Color(2, 5, 61));
+            GraphicsDevice.Clear(new Color(255, 5, 61));
 
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 

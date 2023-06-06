@@ -39,6 +39,8 @@ public class ShipPlayer
     private bool HasCollisioned { get; set; }
     private bool IsReactingToCollision { get; set; }
 
+    Arsenal Arsenal { get; set; }
+
     // Uso el constructor como el Initialize
     public ShipPlayer(TGCGame game)
     {
@@ -46,6 +48,7 @@ public class ShipPlayer
         Position = Vector3.Zero;
         Rotation = 0f;
         Game = game;
+        Arsenal = new Arsenal(game, 15, World.Translation);
     }
 
     public void LoadContent(ContentManager content, Effect effect)
@@ -59,7 +62,8 @@ public class ShipPlayer
         ShipBoundingBox = OrientedBoundingBox.FromAABB(tempAABB);
         ShipBoundingBox.Center = Position;
         ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
-        
+        Arsenal.LoadContent(content, Effect);
+
         foreach (var mesh in Model.Meshes)
         {
             foreach (var meshPart in mesh.MeshParts)
@@ -86,6 +90,8 @@ public class ShipPlayer
         ShipBoundingBox.Center += deltaPosition;
             
         World = OBBWorld = Matrix.CreateScale(Scale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
+
+        Arsenal.Update(gameTime, Position, followCamera);
 
         followCamera.Update(gameTime, World);
     }
@@ -173,15 +179,11 @@ public class ShipPlayer
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
 
-        // TODO: mover a otro modulo
-        spriteBatch.Begin();
-        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.00"), new Vector2(0, 20), Color.Black);
-        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (Velocities.Length - 2), 
-            new Vector2(0, 0), Color.Black);
-        spriteBatch.End();
         
         var index = 0;
         Game.GraphicsDevice.BlendState = BlendState.Opaque;
+        World = OBBWorld = Matrix.CreateScale(Scale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
+
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
@@ -201,8 +203,10 @@ public class ShipPlayer
             }
         }
 
-        Game.Gizmos.DrawCube(OBBWorld, Color.Red);
+        Arsenal.Draw(followCamera);
 
+        Game.Gizmos.DrawCube(OBBWorld, Color.Red);
+        
         spriteBatch.Begin();
         spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.00"), new Vector2(0, 20), Color.Black);
         spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (Velocities.Length - 2),
@@ -218,6 +222,8 @@ public class ShipPlayer
         {
             HasCollisioned = true;
         }
+
+        Arsenal.CheckCollision(boundingBox);
     }
     
 }

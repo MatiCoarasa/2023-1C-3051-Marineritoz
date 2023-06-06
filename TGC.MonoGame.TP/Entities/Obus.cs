@@ -1,0 +1,147 @@
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using System;
+using System.Diagnostics;
+using TGC.MonoGame.TP.Cameras;
+using TGC.MonoGame.TP.Content.Gizmos;
+
+namespace TGC.MonoGame.TP.Entities
+{
+    public class Obus
+    {
+        private Effect Effect;
+        private Model Model;
+        private OrientedBoundingBox OBBObus;
+        private TGCGame Game;
+
+        private Matrix World;
+        public Vector3 ObusPosition;
+
+        // 0.0018f
+        private float _standarScale = 0.0018f;
+        private float actualObusRotation = 0f;
+        private float time;
+        public bool Firing = false;
+        private bool hit = false;
+
+
+        private float actualAngle;
+        public Vector3 actualCannonDirection;
+
+        float baseSpeed = 100f;
+        float gravity = 9.8f;
+        float actualSpeed = 0f;
+        public Obus(TGCGame game, Vector3 ShipPosition) {
+            World = Matrix.CreateTranslation(ShipPosition);
+            ObusPosition = ShipPosition;
+            Game = game;
+        }
+
+        public void Update(GameTime gameTime, Vector3 ShipPosition, Vector3 cannonDirection, float angle)
+        {
+            var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
+
+
+            if (World.Translation.Y < -3f)
+            {
+                //Firing = false;
+                hit = true;
+            }
+
+            if (!Firing)
+            {
+                actualAngle = angle;
+                actualCannonDirection = Vector3.Normalize(cannonDirection);
+                actualObusRotation = MathF.Atan(actualCannonDirection.X / actualCannonDirection.Z);
+                ObusPosition = ShipPosition;
+                World = Matrix.CreateScale(_standarScale) * Matrix.CreateTranslation(ObusPosition);
+                actualSpeed = baseSpeed;
+            } else
+            {
+                //Lo hago para poder ver la bala clavaba en el bounding box de las islas y en el suelo.
+                if (!hit)
+                {
+                    time += elapsedTime;
+                    if (actualSpeed - time > 5f)
+                    {
+                        actualSpeed -= time;
+                    }
+
+                    actualCannonDirection.Y = MathF.Tan(actualAngle);
+                    ObusPosition += (Vector3.Normalize(actualCannonDirection) * actualSpeed * time + 0.5f * gravity * Vector3.Down * time * time) * elapsedTime;
+
+                    OBBObus.Orientation = Matrix.CreateRotationY(actualObusRotation);
+
+                    World = Matrix.CreateScale(_standarScale) * Matrix.CreateRotationY(actualObusRotation) * Matrix.CreateTranslation(ObusPosition);
+                    OBBObus.Center = World.Translation;
+
+                }
+            }
+
+        }
+
+        public void Fire()
+        {
+            time = 0f;
+            Firing = true;
+        }
+
+        public void Reload()
+        {
+            hit = false;
+            Firing = false;
+        }
+
+        public void LoadContent(ContentManager content, Effect effect, Model model)
+        {
+            Effect = effect;
+            Model = model;
+
+            var tempAABB = BoundingVolumesExtensions.CreateAABBFrom(Model);
+            tempAABB = BoundingVolumesExtensions.Scale(tempAABB, _standarScale);
+            OBBObus = OrientedBoundingBox.FromAABB(tempAABB);
+        }
+
+
+        public void Draw(Camera Camera)
+        {
+           // if (!Firing) return;
+
+            Effect.Parameters["View"].SetValue(Camera.View);
+            Effect.Parameters["Projection"].SetValue(Camera.Projection);
+
+            foreach (var mesh in Model.Meshes)
+            {
+                Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
+
+                foreach (var meshPart in mesh.MeshParts)
+                {
+                    foreach (var pass in Effect.CurrentTechnique.Passes)
+                    {
+                        pass.Apply();
+                    }
+                    mesh.Draw();
+                }   
+            }
+
+
+            var ObusOBBWorld = Matrix.CreateScale(OBBObus.Extents * 2f) *
+                 OBBObus.Orientation * Matrix.CreateTranslation(World.Translation);
+
+            Game.Gizmos.DrawCube(ObusOBBWorld, Color.White);
+        }
+
+        public void CheckCollision(BoundingBox boundingBox)
+        {
+
+            if (OBBObus.Intersects(boundingBox))
+            {
+                //Firing = false;
+                hit = true;
+            }
+        }
+
+    }
+}
