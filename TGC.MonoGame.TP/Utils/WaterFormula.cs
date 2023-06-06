@@ -53,20 +53,20 @@ public static class WaterFormula
         var WA = waveAmplitude * k;
         var S = Math.Sin(frequency);
         var C = Math.Cos(frequency);
-        tangent += new Vector3(
-            Convert.ToSingle(-steepness * direction.X * direction.Y * WA * S),
-            Convert.ToSingle(-steepness * direction.Y * direction.Y * WA * S),
-            Convert.ToSingle(direction.Y * WA * C)
-        );
         binormal += new Vector3(
-            Convert.ToSingle(-steepness * direction.X * direction.X * WA * S),
             Convert.ToSingle(-steepness * direction.X * direction.Y * WA * S),
-            Convert.ToSingle(direction.X * WA * S)
+            Convert.ToSingle(direction.Y * WA * C),
+            Convert.ToSingle(-steepness * direction.Y * direction.Y * WA * S)
+        );
+        tangent += new Vector3(
+            Convert.ToSingle(-steepness * direction.X * direction.X * WA * S),
+            Convert.ToSingle(direction.X * WA * S),
+            Convert.ToSingle(-steepness * direction.X * direction.Y * WA * S)
         );
         normal += new Vector3(
             Convert.ToSingle(-direction.X * WA * C),
-            Convert.ToSingle(-direction.Y * WA * C),
-            Convert.ToSingle(-steepness * WA * S)
+            Convert.ToSingle(-steepness * WA * S),
+            Convert.ToSingle(-direction.Y * WA * C)
         );
         return new Vector3(
             Convert.ToSingle(direction.X * frequencyWithAmplitude),
@@ -83,9 +83,9 @@ public static class WaterFormula
     public static WaterPosition GetPositionInWaveNvidia(this Vector3 anchorPosition, float timer)
     {
         var position = anchorPosition;
-        var tangent = Vector3.Zero;
-        var binormal = Vector3.Zero;
-        var normal = Vector3.Zero;
+        var tangent = new Vector3(0, 0, 1);
+        var binormal = new Vector3(1, 0, 0);
+        var normal = new Vector3(0, 1, 0);
         var wave1 = Wave(0.25f, 15, new Vector2(1,1));
         var wave2 = Wave(0.25f, 10, new Vector2(1,0.6f));
         var wave3 = Wave(0.25f, 5, new Vector2(1,1.3f));

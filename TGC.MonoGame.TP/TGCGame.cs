@@ -38,12 +38,10 @@ namespace TGC.MonoGame.TP
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
         private float Time { get; }
-        private SpriteFont Font { get; set; }
 
         private BoundingBox[] _colliders;
 
         private Rain Rain { get; set; }
-        private GearBox GearBox { get; set; }
         private HealthBar HealthBar { get; set; }
 
         /// <summary>
@@ -82,7 +80,7 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
+            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
             IslandGenerator = new IslandGenerator(this);
             Water = new Water(GraphicsDevice);

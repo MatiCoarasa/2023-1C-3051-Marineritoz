@@ -25,8 +25,11 @@ public class WaterPosition
     {
         position = _position;
         tangent = _tangent;
+        tangent.Normalize();
         binormal = _binormal;
+        binormal.Normalize();
         normal = _normal;
+        normal.Normalize();
     }
 
     public Vector3 position { get; set; }

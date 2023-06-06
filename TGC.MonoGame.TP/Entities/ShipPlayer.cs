@@ -94,7 +94,7 @@ public class ShipPlayer
 
         var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
         ShipBoundingBox.Center += deltaPosition;
-        WaterPosition = Position.GetPositionInWaveNvidia(totalTime);
+        WaterPosition = Position.GetPositionInWave(totalTime);
         World = OBBWorld = Matrix.CreateScale(Scale)
                            * Matrix.CreateFromQuaternion(Quaternion.CreateFromYawPitchRoll(WaterPosition.tangent.X, WaterPosition.tangent.Y / 4, WaterPosition.tangent.Z / 2))
                            * Matrix.CreateRotationY(Rotation)
@@ -215,9 +215,9 @@ public class ShipPlayer
 
         Game.Gizmos.DrawCube(OBBWorld * 2, Color.Red);
         
-        Game.Gizmos.DrawLine(WaterPosition.position, WaterPosition.normal, Color.Green);
-        Game.Gizmos.DrawLine(WaterPosition.position, WaterPosition.binormal, Color.Red);
-        Game.Gizmos.DrawLine(WaterPosition.position, WaterPosition.tangent, Color.Violet);
+        Game.Gizmos.DrawLine(World.Translation, WaterPosition.normal, Color.Green);
+        Game.Gizmos.DrawLine(World.Translation, WaterPosition.binormal, Color.Red);
+        Game.Gizmos.DrawLine(World.Translation, WaterPosition.tangent, Color.Violet);
     }
 
     public void CheckCollision(BoundingBox boundingBox, HealthBar healthBar)
