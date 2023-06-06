@@ -24,11 +24,9 @@ namespace TGC.MonoGame.TP.Entities
 
         private Obus[] _bullets;
 
-        private float shootCooldown = 5f;
-        private float reUseBulletCooldown = 4f;
+        private float shootCooldown = 2f;
 
         private float timerCooldownShoot = 0;
-        private float timerReloadCooldown = 0;
 
         private float angle = 0f;
         private float sens = 10f;

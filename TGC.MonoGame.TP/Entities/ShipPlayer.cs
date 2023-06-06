@@ -57,7 +57,7 @@ public class ShipPlayer
         Game = game;
         WaterPosition = new WaterPosition();
         GearBox = new GearBox();
-        Arsenal = new Arsenal(game, 2, World.Translation);
+        Arsenal = new Arsenal(game, 15, World.Translation);
     }
 
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content, Effect effect)
