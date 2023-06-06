@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics; 
 
@@ -56,7 +55,7 @@ namespace TGC.MonoGame.TP.Entities
 
         private void CreateIndexBuffer(GraphicsDevice graphicsDevice, int rows)
         {
-            List<ushort> indices = new List<ushort>();
+            List<int> indices = new List<int>();
 
             /*
              * 0 ---- 1  0 = left upper vertex
@@ -64,16 +63,16 @@ namespace TGC.MonoGame.TP.Entities
              * | /    |  2 = left bottom vertex
              * 2 ---- 3  3 = right bottom vertex
             */
-            for (ushort i = 0; i <= rows - 1; i++)
+            for (int i = 0; i <= rows - 1; i++)
             {
-                for (ushort j = 0; j <= rows - 1; j++)
+                for (int j = 0; j <= rows - 1; j++)
                 {
                     // Es el salto en cantidad que hace el primer vertice de una row a otra row
                     var jump = rows + 1;
-                    var leftUpperVertex = (ushort) (j + jump * i);
-                    var rightUpperVertex = (ushort) (j + jump * i + 1);
-                    var leftBottomVertex = (ushort) (jump * (i + 1) + j);
-                    var rightBottomVertex = (ushort) (jump * (i + 1) + j + 1);
+                    var leftUpperVertex = (int) (j + jump * i);
+                    var rightUpperVertex = (int) (j + jump * i + 1);
+                    var leftBottomVertex = (int) (jump * (i + 1) + j);
+                    var rightBottomVertex = (int) (jump * (i + 1) + j + 1);
                     // Triangulo superior
                     indices.Add(leftUpperVertex);
                     indices.Add(rightUpperVertex);
@@ -84,7 +83,7 @@ namespace TGC.MonoGame.TP.Entities
                     indices.Add(leftBottomVertex);
                 }
             }
-            Indices = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, indices.Count,
+            Indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count,
                 BufferUsage.None);
             Indices.SetData(indices.ToArray());
         }
@@ -119,7 +118,6 @@ namespace TGC.MonoGame.TP.Entities
             // Set our vertex declaration, vertex buffer, and index buffer.
             graphicsDevice.SetVertexBuffer(Vertices);
             graphicsDevice.Indices = Indices;
-
             foreach (var effectPass in effect.CurrentTechnique.Passes)
             {
                 effectPass.Apply();

@@ -24,8 +24,6 @@ namespace TGC.MonoGame.TP.Entities
         private float actualObusRotation = 0f;
         private float time;
         public bool Firing = false;
-        private bool hit = false;
-
 
         private float actualAngle;
         public Vector3 actualCannonDirection;
@@ -44,10 +42,9 @@ namespace TGC.MonoGame.TP.Entities
             var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
 
 
-            if (World.Translation.Y < -3f)
+            if (World.Translation.Y < -20f)
             {
-                //Firing = false;
-                hit = true;
+                Firing = false;
             }
 
             if (!Firing)
@@ -61,8 +58,7 @@ namespace TGC.MonoGame.TP.Entities
             } else
             {
                 //Lo hago para poder ver la bala clavaba en el bounding box de las islas y en el suelo.
-                if (!hit)
-                {
+
                     time += elapsedTime;
                     if (actualSpeed - time > 5f)
                     {
@@ -77,21 +73,15 @@ namespace TGC.MonoGame.TP.Entities
                     World = Matrix.CreateScale(_standarScale) * Matrix.CreateRotationY(actualObusRotation) * Matrix.CreateTranslation(ObusPosition);
                     OBBObus.Center = World.Translation;
 
-                }
             }
 
         }
+
 
         public void Fire()
         {
             time = 0f;
             Firing = true;
-        }
-
-        public void Reload()
-        {
-            hit = false;
-            Firing = false;
         }
 
         public void LoadContent(ContentManager content, Effect effect, Model model)
@@ -138,8 +128,7 @@ namespace TGC.MonoGame.TP.Entities
 
             if (OBBObus.Intersects(boundingBox))
             {
-                //Firing = false;
-                hit = true;
+               //Firing = true;
             }
         }
 
