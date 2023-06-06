@@ -11,7 +11,7 @@ namespace TGC.MonoGame.TP.Entities
     {
         private const string ContentFolderEffects = "Effects/";
         private const string ContentFolderTextures = "Textures/";
-        private const int RowsOfQuads = 100;
+        private const int RowsOfQuads = 500;
         private GraphicsDevice GraphicsDevice { get; }
         private Quad Quad { get; }
 
@@ -36,7 +36,7 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="view"></param>
         /// <param name="projection"></param>
         /// <param name="time"></param>
-        public void Draw(Matrix view, Matrix projection, float time)
+        public void Draw(Vector3 ShipPosition, Matrix view, Matrix projection, float time)
         {
             const float escala = 500f;
             var world = Matrix.CreateScale(escala);

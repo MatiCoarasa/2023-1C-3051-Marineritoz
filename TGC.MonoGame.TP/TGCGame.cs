@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.ComponentModel.Design.Serialization;
+using System.Reflection;
 using TGC.MonoGame.TP.Content.Gizmos;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
@@ -25,9 +27,10 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderTextures = "Textures/";
         private Camera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
+        private Vector3 ShipPosition { get; set; }
         private Effect TextureShader { get; set; }
         public Gizmos Gizmos { get; }
-        private const bool GizmosEnabled = false;
+        private const bool GizmosEnabled = true;
         
         private const int IslandsQuantity = 200;
 
@@ -40,7 +43,9 @@ namespace TGC.MonoGame.TP
         private BoundingBox[] _colliders;
 
         private Rain Rain { get; set; }
-        
+        private GearBox GearBox { get; set; }
+        private HealthBar HealthBar { get; set; }
+
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -79,13 +84,12 @@ namespace TGC.MonoGame.TP
             GraphicsDevice.RasterizerState = rasterizerState;
             FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
-            IslandGenerator = new IslandGenerator();
+            IslandGenerator = new IslandGenerator(this);
             Water = new Water(GraphicsDevice);
             Rain = new Rain(Content, GraphicsDevice);
             Rain.Initialize(100f, 150f, -3f, 500, 1f);
-
             _colliders = new BoundingBox[IslandsQuantity];
-            
+            HealthBar = new HealthBar();
             base.Initialize();
         }
 
@@ -97,8 +101,6 @@ namespace TGC.MonoGame.TP
         protected override void LoadContent()
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
-
-            Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
             
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
 
@@ -107,8 +109,8 @@ namespace TGC.MonoGame.TP
             
             // Load ship
             TextureShader = Content.Load<Effect>(ContentFolderEffects + "TextureShader");
-            Ship.LoadContent(Content, TextureShader);
-
+            Ship.LoadContent(GraphicsDevice, Content, TextureShader);
+            HealthBar.LoadContent(Content);
             // Load islands
             IslandGenerator.LoadContent(Content, TextureShader);
             Islands = IslandGenerator.CreateRandomIslands(IslandsQuantity, 2000, 2000, 50);
@@ -137,10 +139,10 @@ namespace TGC.MonoGame.TP
                 Exit();
             }
 
-            Ship.Update(gameTime, FollowCamera);
+            ShipPosition = Ship.Update(gameTime, FollowCamera);
             foreach (var collider in _colliders)
             {
-                Ship.CheckCollision(collider);
+                Ship.CheckCollision(collider, HealthBar);
             }
 
             base.Update(gameTime);
@@ -159,7 +161,7 @@ namespace TGC.MonoGame.TP
 
             Rain.Draw(gameTime, FollowCamera);
 
-            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+            Water.Draw(ShipPosition, FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
 
             foreach (var island in Islands)
             {
@@ -167,7 +169,8 @@ namespace TGC.MonoGame.TP
                 island.Draw(FollowCamera.View, FollowCamera.Projection);
             }
 
-            Ship.Draw(FollowCamera, SpriteBatch, Font);
+            Ship.Draw(FollowCamera, SpriteBatch, GraphicsDevice.Viewport.Height);
+            HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
             Gizmos.Draw();
         }
 
