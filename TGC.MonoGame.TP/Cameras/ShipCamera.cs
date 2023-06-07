@@ -125,7 +125,7 @@ namespace TGC.MonoGame.TP.Cameras
             }
 
 
-            if (currentMouseState.Y > 4 && pitch > 0f)
+            if (currentMouseState.Y > 4 && pitch > 10f)
             {
 
                 pitch -= factor * sens / 2 * elapsedTime;

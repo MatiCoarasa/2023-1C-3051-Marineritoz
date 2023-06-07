@@ -97,7 +97,7 @@ namespace TGC.MonoGame.TP.Entities
 
         public void Draw(Camera Camera)
         {
-           // if (!Firing) return;
+            if (!Firing) return;
 
             Effect.Parameters["View"].SetValue(Camera.View);
             Effect.Parameters["Projection"].SetValue(Camera.Projection);

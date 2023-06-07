@@ -28,7 +28,7 @@ public class ShipPlayer
     // Cambios del barco
     // -1, 0, 1, 2, 3, 4 
     private float CurrentVelocity { get; set; }
-    private float[] Velocities { get; } = {-10f, 0f, 5f, 10f, 15f, 20f};
+    private float[] Velocities { get; } = {-5f, 0f, 2f, 4f, 6f, 8f};
     private int CurrentVelocityIndex { get; set; } = 1;
     private float LastVelocityChangeTimer { get; set; }
     private const float MinimumSecsBetweenVelocityChanges = .5f;
@@ -36,7 +36,7 @@ public class ShipPlayer
     private float Rotation { get; set; }
     private const float RotationVelocity = 1f;
 
-    private const float Acceleration = 3f;
+    private const float Acceleration = 1f;
 
     private Matrix OBBWorld { get; set; }
     private OrientedBoundingBox ShipBoundingBox { get; set; }
@@ -200,7 +200,6 @@ public class ShipPlayer
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
 
-        GearBox.Draw(spriteBatch, height);
         var index = 0;
         Game.GraphicsDevice.BlendState = BlendState.Opaque;
 
@@ -222,6 +221,7 @@ public class ShipPlayer
                 index++;
             }
         }
+        GearBox.Draw(spriteBatch, height);
 
         Arsenal.Draw(followCamera);
 

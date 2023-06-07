@@ -31,7 +31,7 @@ namespace TGC.MonoGame.TP
         private Vector3 ShipPosition { get; set; }
         private Effect TextureShader { get; set; }
         public Gizmos Gizmos { get; }
-        private const bool GizmosEnabled = true;
+        private const bool GizmosEnabled = false;
         
         private const int IslandsQuantity = 200;
 
