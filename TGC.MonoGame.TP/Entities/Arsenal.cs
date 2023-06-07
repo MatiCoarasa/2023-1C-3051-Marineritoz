@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework.Audio;
 using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP.Entities
@@ -21,6 +22,7 @@ namespace TGC.MonoGame.TP.Entities
         private Effect Effect;
         private Model Model;
         private const string ContentFolder3D = "Models/";
+        public const string ContentFolderSounds = "Sounds/";
 
         private Obus[] _bullets;
 
@@ -35,6 +37,7 @@ namespace TGC.MonoGame.TP.Entities
 
         private int _size;
         private int currentBullet = 0;
+        private SoundEffect GunShotEffect { get; set; }
 
         public Arsenal(TGCGame game,int size, Vector3 shipPosition) {
             ShipPosition = shipPosition;
@@ -45,6 +48,12 @@ namespace TGC.MonoGame.TP.Entities
 
             Game = game;
         }
+
+        public void LoadContent()
+        {
+            GunShotEffect = Game.Content.Load<SoundEffect>(ContentFolderSounds + "gunshot");
+        }
+
         public void Update(GameTime gameTime, Vector3 shipPosition, Camera Camera)
         {
             var keyboardState = Keyboard.GetState();
@@ -75,7 +84,10 @@ namespace TGC.MonoGame.TP.Entities
 
             if (keyboardState.IsKeyDown(Keys.F) && timerCooldownShoot > shootCooldown)
             {
-                this.Fire();
+                Fire();
+                var instance = GunShotEffect.CreateInstance();
+                instance.Volume = 0.05f;
+                instance.Play();
                 timerCooldownShoot = 0f;
             }
 

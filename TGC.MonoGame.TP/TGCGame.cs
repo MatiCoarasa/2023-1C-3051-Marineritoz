@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.ComponentModel.Design.Serialization;
 using System.Reflection;
+using Microsoft.Xna.Framework.Media;
 using TGC.MonoGame.TP.Content.Gizmos;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
@@ -67,7 +68,8 @@ namespace TGC.MonoGame.TP
 
         private GraphicsDeviceManager Graphics { get; }
         private SpriteBatch SpriteBatch { get; set; }
-
+        
+        private Song Song { get; set; }
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
         ///     Escribir aqui el codigo de inicializacion: el procesamiento que podemos pre calcular para nuestro juego.
@@ -101,7 +103,8 @@ namespace TGC.MonoGame.TP
             SpriteBatch = new SpriteBatch(GraphicsDevice);
             
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
-
+            Song = Content.Load<Song>(ContentFolderMusic + "piratas-del-caribe");
+            MediaPlayer.IsRepeating = true;
             // Load water
             Water.LoadContent(Content);
             
@@ -128,6 +131,12 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
+            if (MediaPlayer.State == MediaState.Stopped)
+            {
+                MediaPlayer.Volume = 0.01f;
+                MediaPlayer.Play(Song);
+            }
+
             Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
             
             // Capturar Input teclado

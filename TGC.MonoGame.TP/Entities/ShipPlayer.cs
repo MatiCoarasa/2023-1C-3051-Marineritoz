@@ -64,7 +64,7 @@ public class ShipPlayer
     {
         Effect = effect;
         Model = content.Load<Model>(ContentFolder3D + "ShipA/Ship");
-        
+        Arsenal.LoadContent();
         // Set Ship oriented bounding box
         var tempAABB = BoundingVolumesExtensions.CreateAABBFrom(Model);
         tempAABB = BoundingVolumesExtensions.Scale(tempAABB, Scale);
