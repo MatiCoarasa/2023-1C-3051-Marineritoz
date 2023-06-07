@@ -7,6 +7,7 @@ using TGC.MonoGame.TP.Content.Gizmos;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
+using TGC.MonoGame.TP.Menu;
 
 namespace TGC.MonoGame.TP
 {
@@ -34,12 +35,18 @@ namespace TGC.MonoGame.TP
         private Water Water { get; set; }
         private float Time { get; }
         private SpriteFont Font { get; set; }
+        
+        public GraphicsDeviceManager Graphics { get; }
+        public SpriteBatch SpriteBatch { get; set; }
 
         private BoundingBox[] _colliders;
 
         private Rain Rain { get; set; }
 
         private GlobalConfigurationSingleton GlobalConfig { get; }
+        private MainMenu _menu;
+
+        public GameStatus GameStatus = GameStatus.MainMenu;
         
         /// <summary>
         ///     Constructor del juego.
@@ -53,7 +60,7 @@ namespace TGC.MonoGame.TP
             Graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 200;
             Graphics.GraphicsProfile = GraphicsProfile.HiDef;
 
-            IsMouseVisible = false;
+            IsMouseVisible = true;
 
             Gizmos = new Gizmos();
             Gizmos.Enabled = GizmosEnabled;
@@ -64,9 +71,6 @@ namespace TGC.MonoGame.TP
             Content.RootDirectory = "Content";
         }
 
-        private GraphicsDeviceManager Graphics { get; }
-        private SpriteBatch SpriteBatch { get; set; }
-
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
         ///     Escribir aqui el codigo de inicializacion: el procesamiento que podemos pre calcular para nuestro juego.
@@ -75,14 +79,26 @@ namespace TGC.MonoGame.TP
         {
             var rasterizerState = new RasterizerState();
             GraphicsDevice.RasterizerState = rasterizerState;
+            
+            SpriteBatch = new SpriteBatch(GraphicsDevice);
 
+            _menu = new MainMenu(this);
 
             FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
             IslandGenerator = new IslandGenerator(this);
+
+
             Water = new Water(GraphicsDevice);
             Rain = new Rain(Content, GraphicsDevice);
-            Rain.Initialize(GlobalConfig.RainSize, GlobalConfig.RainMaxHeight, GlobalConfig.RainMinHeight, GlobalConfig.RainDropCount, GlobalConfig.RainSpeedDrop);
+            Rain.Initialize(
+                GlobalConfig.RainSize, 
+                GlobalConfig.RainMaxHeight, 
+                GlobalConfig.RainMinHeight, 
+                GlobalConfig.RainDropCount, 
+                GlobalConfig.RainSpeedDrop,
+                GlobalConfig.RainColor
+                );
 
             _colliders = new BoundingBox[GlobalConfig.IslandsQuantity];
             
@@ -96,10 +112,8 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void LoadContent()
         {
-            SpriteBatch = new SpriteBatch(GraphicsDevice);
-
+            _menu.LoadContent();
             Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
-            
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
 
             // Load water
@@ -128,21 +142,24 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
-            Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape)) GameStatus = GameStatus.Exit;
             
-            // Capturar Input teclado
-            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+            switch (GameStatus)
             {
-                //Salgo del juego.
-                Exit();
-            }
+                case GameStatus.NormalGame:
+                    Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
 
-            Ship.Update(gameTime, FollowCamera);
-            foreach (var collider in _colliders)
-            {
-                Ship.CheckCollision(collider);
+                    Ship.Update(gameTime, FollowCamera);
+                    foreach (var collider in _colliders)
+                    {
+                        Ship.CheckCollision(collider);
+                    }
+                    break;
+                case GameStatus.Exit:
+                    Exit();
+                    break;
             }
-
+            
             base.Update(gameTime);
         }
 
@@ -152,23 +169,33 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(GlobalConfig.SkyColor);
-
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-
-            Rain.Draw(gameTime, FollowCamera);
-
-            Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
-
-            foreach (var island in Islands)
+            switch (GameStatus)
             {
-                GraphicsDevice.BlendState = BlendState.Opaque;
-                island.Draw(FollowCamera.View, FollowCamera.Projection);
+                case GameStatus.MainMenu:
+                    GraphicsDevice.Clear(Color.Khaki);
+                    _menu.Draw(gameTime);
+                    break;
+                
+                case GameStatus.NormalGame:
+                    
+                    GraphicsDevice.Clear(GlobalConfig.SkyColor);
+                    Rain.Draw(gameTime, FollowCamera);
+                    Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+
+                    foreach (var island in Islands)
+                    {
+                        GraphicsDevice.BlendState = BlendState.Opaque;
+                        island.Draw(FollowCamera.View, FollowCamera.Projection);
+                    }
+
+                    Ship.Draw(FollowCamera, SpriteBatch, Font);
+                    Gizmos.Draw();
+                    break;
             }
 
-            Ship.Draw(FollowCamera, SpriteBatch, Font);
-            Gizmos.Draw();
+
         }
 
         /// <summary>

@@ -31,6 +31,8 @@ namespace TGC.MonoGame.TP
 
         private float _speedBaseDrop;
 
+        private Color _color;
+
         private DropDataInstance[] _dropDataInstance;
 
         private VertexBufferBinding[] Binding;
@@ -48,13 +50,14 @@ namespace TGC.MonoGame.TP
             public Vector3 Offset;
         }
 
-        public void Initialize(float size, float maxHeight, float minHeight, int dropCount, float speedDrop)
+        public void Initialize(float size, float maxHeight, float minHeight, int dropCount, float speedDrop, Color color)
         {
             _size = size;
             _maxHeight = maxHeight;
             _minHeight = minHeight;
             _speedBaseDrop = speedDrop;
             _dropCount = dropCount;
+            _color = color;
 
             var rand = new Random();
 
@@ -84,7 +87,7 @@ namespace TGC.MonoGame.TP
 
             _instanceDeclaration = new VertexDeclaration(new VertexElement[]
             {
-                new VertexElement(0,VertexElementFormat.Vector3,VertexElementUsage.Position,1)
+                new (0,VertexElementFormat.Vector3,VertexElementUsage.Position,1)
             });
 
             _instanceBuffer = new VertexBuffer(GraphicsDevice, _instanceDeclaration, _dropCount, BufferUsage.None);
@@ -119,7 +122,7 @@ namespace TGC.MonoGame.TP
 
             Effect.Parameters["View"].SetValue(camera.View);
             Effect.Parameters["Projection"].SetValue(camera.Projection);
-            Effect.Parameters["DiffuseColor"].SetValue(Color.Blue.ToVector3());
+            Effect.Parameters["DiffuseColor"].SetValue(_color.ToVector3());
             Effect.Parameters["Time"]?.SetValue(Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
             Effect.Parameters["MaxHeight"]?.SetValue(_maxHeight);
             Effect.Parameters["MinHeight"]?.SetValue(_minHeight);

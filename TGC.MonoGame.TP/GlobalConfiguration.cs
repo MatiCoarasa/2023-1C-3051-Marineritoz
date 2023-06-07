@@ -14,15 +14,16 @@ public class GlobalConfigurationSingleton
     }
     
     // Environment config
-    public Color SkyColor = Color.Aqua;
+    public Color SkyColor = new (0, 0, 15);
 
     // Rain config
     public float RainSize = 100;
     public float RainMaxHeight = 150;
     public float RainMinHeight = -3;
-    public float RainSpeedDrop = 500;
-    public int RainDropCount = 1;
-    
+    public int RainDropCount = 500;
+    public float RainSpeedDrop = 1;
+    public Color RainColor = Color.White;
+
     // Island generation config
     public int IslandsQuantity = 100;
     public float IslandsMinScale = .8f;  // Value between 0 and 1

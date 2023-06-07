@@ -166,6 +166,12 @@ public class ShipPlayer
     {
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
+        
+        spriteBatch.Begin();
+        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.0"), new Vector2(0, 20), Color.White);
+        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (GlobalConfig.PlayerVelocities.Length - 2),
+            new Vector2(0, 0), Color.White);
+        spriteBatch.End();
 
         var index = 0;
         Game.GraphicsDevice.BlendState = BlendState.Opaque;
@@ -187,14 +193,6 @@ public class ShipPlayer
                 index++;
             }
         }
-
-        Game.Gizmos.DrawCube(OBBWorld * 2, Color.Red);
-
-        spriteBatch.Begin();
-        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.0"), new Vector2(0, 20), Color.White);
-        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (GlobalConfig.PlayerVelocities.Length - 2),
-            new Vector2(0, 0), Color.White);
-        spriteBatch.End();
     }
 
     public void CheckCollision(BoundingBox boundingBox)
