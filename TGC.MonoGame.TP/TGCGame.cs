@@ -80,7 +80,7 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
+            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
             IslandGenerator = new IslandGenerator(this);
             Water = new Water(GraphicsDevice);
@@ -152,7 +152,7 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(new Color(2, 5, 61));
+            GraphicsDevice.Clear(new Color(5, 5, 61));
 
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 

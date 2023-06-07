@@ -45,6 +45,9 @@ public class ShipPlayer
     private float LastCollisionTimer { get; set; } = 0;
     
     private GearBox GearBox { get; set; }
+
+    Arsenal Arsenal { get; set; }
+
     // Uso el constructor como el Initialize
     public ShipPlayer(TGCGame game)
     {
@@ -54,6 +57,7 @@ public class ShipPlayer
         Game = game;
         WaterPosition = new WaterPosition();
         GearBox = new GearBox();
+        Arsenal = new Arsenal(game, 15, World.Translation);
     }
 
     public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content, Effect effect)
@@ -69,6 +73,8 @@ public class ShipPlayer
         ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
         
         GearBox.LoadContent(graphicsDevice, content);
+        Arsenal.LoadContent(content, Effect);
+
         foreach (var mesh in Model.Meshes)
         {
             foreach (var meshPart in mesh.MeshParts)
@@ -99,6 +105,9 @@ public class ShipPlayer
                            * Matrix.CreateRotationY(Rotation)
                            * Matrix.CreateWorld(Vector3.Zero, - WaterPosition.binormal, WaterPosition.normal)
                            * Matrix.CreateTranslation(WaterPosition.position);
+
+            
+        Arsenal.Update(gameTime, Position, followCamera);
 
         followCamera.Update(gameTime, World);
         return World.Translation;
@@ -194,6 +203,8 @@ public class ShipPlayer
         GearBox.Draw(spriteBatch, height);
         var index = 0;
         Game.GraphicsDevice.BlendState = BlendState.Opaque;
+        World = OBBWorld = Matrix.CreateScale(Scale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
+
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
@@ -212,6 +223,8 @@ public class ShipPlayer
                 index++;
             }
         }
+
+        Arsenal.Draw(followCamera);
 
         Game.Gizmos.DrawCube(OBBWorld * 2, Color.Red);
         
@@ -233,6 +246,8 @@ public class ShipPlayer
             }
             HasCollisioned = true;
         }
+
+        Arsenal.CheckCollision(boundingBox);
     }
     
 }
