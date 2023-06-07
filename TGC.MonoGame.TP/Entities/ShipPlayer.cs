@@ -203,7 +203,6 @@ public class ShipPlayer
         GearBox.Draw(spriteBatch, height);
         var index = 0;
         Game.GraphicsDevice.BlendState = BlendState.Opaque;
-        World = OBBWorld = Matrix.CreateScale(Scale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
 
         foreach (var mesh in Model.Meshes)
         {
