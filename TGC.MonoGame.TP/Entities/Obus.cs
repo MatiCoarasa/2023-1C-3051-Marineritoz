@@ -128,7 +128,7 @@ namespace TGC.MonoGame.TP.Entities
 
             if (OBBObus.Intersects(boundingBox))
             {
-               //Firing = true;
+               //TODO implementar impacto de bala.
             }
         }
 
