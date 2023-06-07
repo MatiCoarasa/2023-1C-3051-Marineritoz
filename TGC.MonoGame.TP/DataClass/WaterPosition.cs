@@ -20,17 +20,6 @@ public class WaterPosition
         normal = Vector3.Cross(_binormal, _tangent);
         normal.Normalize();
     }
-    
-    public WaterPosition(Vector3 _position, Vector3 _tangent, Vector3 _binormal, Vector3 _normal)
-    {
-        position = _position;
-        tangent = _tangent;
-        tangent.Normalize();
-        binormal = _binormal;
-        binormal.Normalize();
-        normal = _normal;
-        normal.Normalize();
-    }
 
     public Vector3 position { get; set; }
     public Vector3 tangent { get; set; }

@@ -66,9 +66,9 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 	// Model space to World space
     float4 worldPosition = mul(input.Position, World);
 	float3 anchorPoint = worldPosition.xyz;
-	float4 wave1 = Wave(float2(1,1),0.25,15);
-	float4 wave2 = Wave(float2(1,0.6),0.25,10);
-	float4 wave3 = Wave(float2(1,1.3),0.25,5);
+	float4 wave1 = Wave(float2(1,1),0.1, 20);
+	float4 wave2 = Wave(float2(1,0.6),0.1,10);
+	float4 wave3 = Wave(float2(1,1.3),0.1,5);
     worldPosition.xyz += GerstnerWave(wave1, anchorPoint);
     worldPosition.xyz += GerstnerWave(wave2, anchorPoint);
     worldPosition.xyz += GerstnerWave(wave3, anchorPoint);
