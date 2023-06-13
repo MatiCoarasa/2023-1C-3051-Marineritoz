@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
+using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP.Entities
 {
@@ -36,15 +37,15 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="view"></param>
         /// <param name="projection"></param>
         /// <param name="time"></param>
-        public void Draw(Vector3 ShipPosition, Matrix view, Matrix projection, float time)
+        public void Draw(Vector3 lightPosition, Camera camera, float time)
         {
             const float escala = 500f;
             var world = Matrix.CreateScale(escala);
 
-            GraphicsDevice.BlendState = BlendState.AlphaBlend;
+            GraphicsDevice.BlendState = BlendState.Opaque;
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             
-            Quad.Draw(world, view, projection, time);
+            Quad.Draw(lightPosition, camera, world, time);
         }
     }
 }

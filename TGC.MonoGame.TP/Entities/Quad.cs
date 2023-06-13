@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics; 
+using Microsoft.Xna.Framework.Graphics;
+using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP.Entities
 {
@@ -29,7 +30,7 @@ namespace TGC.MonoGame.TP.Entities
             float subdivisionPosition = 2f / rows;
             // Si queremos que todo el quad tenga la misma textura
             // float subdivisionTexture = 1f / rows;
-            List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
+            List<VertexPositionColorNormal> vertices = new List<VertexPositionColorNormal>();
 
             /*
              * IMPORTANTE:
@@ -40,15 +41,14 @@ namespace TGC.MonoGame.TP.Entities
             {
                 for (float j = 0; j <= rows; j++)
                 {
-                    vertices.Add(new (
+                    vertices.Add(new VertexPositionColorNormal(
                         new Vector3(Convert.ToSingle(i * subdivisionPosition - 1), 0, Convert.ToSingle(j * subdivisionPosition - 1)),
-                        Vector3.UnitY,
-                        // new Vector2(Convert.ToSingle(subdivisionTexture * i), Convert.ToSingle(subdivisionTexture * j)))
-                        new Vector2(Convert.ToSingle(i % 2 == 0 ? 0 : 1), Convert.ToSingle(j % 2 == 0 ? 0 : 1)))
+                        Color.Aqua,
+                        Vector3.UnitY)
                     );
                 }
             }
-            Vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count,
+            Vertices = new VertexBuffer(graphicsDevice, VertexPositionColorNormal.VertexDeclaration, vertices.Count,
                 BufferUsage.None);
             Vertices.SetData(vertices.ToArray());
         }
@@ -95,12 +95,21 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="view">The view matrix, normally from the camera.</param>
         /// <param name="projection">The projection matrix, normally from the application.</param>
         /// <param name="time">Time in second since the game started</param>
-        public void Draw(Matrix world, Matrix view, Matrix projection, float time)
+        public void Draw(Vector3 lightPosition, Camera camera, Matrix world, float time)
         {
+            Effect.Parameters["lightPosition"].SetValue(lightPosition);
+            Effect.Parameters["eyePosition"].SetValue(camera.Position);
+            Effect.Parameters["ambientColor"].SetValue(new Color(0, 115, 153).ToVector3());
+            Effect.Parameters["diffuseColor"].SetValue(new Color(51, 153, 255).ToVector3());
+            Effect.Parameters["specularColor"].SetValue(new Color(179, 236, 255).ToVector3());
+            Effect.Parameters["KAmbient"].SetValue(0.8f);
+            Effect.Parameters["KDiffuse"].SetValue(0.5f);
+            Effect.Parameters["KSpecular"].SetValue(0.2f);
+            Effect.Parameters["shininess"].SetValue(2.0f);
+            Effect.Parameters["DiffuseColor"].SetValue(new Color(0, 204, 255).ToVector3());
             Effect.Parameters["World"].SetValue(world);
-            Effect.Parameters["View"].SetValue(view);
-            Effect.Parameters["Projection"].SetValue(projection);
-            Effect.Parameters["ModelTexture"].SetValue(Texture);
+            Effect.Parameters["View"].SetValue(camera.View);
+            Effect.Parameters["Projection"].SetValue(camera.Projection);
             Effect.Parameters["Time"].SetValue(time);
             Draw(Effect);
         }

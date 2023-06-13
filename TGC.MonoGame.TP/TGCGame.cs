@@ -3,13 +3,12 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.ComponentModel.Design.Serialization;
-using System.Reflection;
 using Microsoft.Xna.Framework.Media;
 using TGC.MonoGame.TP.Content.Gizmos;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
+using TGC.MonoGame.TP.Entities.Light;
 
 namespace TGC.MonoGame.TP
 {
@@ -30,6 +29,7 @@ namespace TGC.MonoGame.TP
         private ShipPlayer Ship { get; set; }
         private Vector3 ShipPosition { get; set; }
         private Effect TextureShader { get; set; }
+        private Effect BasicShader { get; set; }
         public Gizmos Gizmos { get; }
         private const bool GizmosEnabled = false;
         
@@ -70,6 +70,8 @@ namespace TGC.MonoGame.TP
         private SpriteBatch SpriteBatch { get; set; }
         
         private Song Song { get; set; }
+        
+        private SunLight SunLight { get; set; }
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
         ///     Escribir aqui el codigo de inicializacion: el procesamiento que podemos pre calcular para nuestro juego.
@@ -82,13 +84,14 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
+            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
             IslandGenerator = new IslandGenerator(this);
             Water = new Water(GraphicsDevice);
             Rain = new Rain(Content, GraphicsDevice);
             Rain.Initialize(100f, 150f, -3f, 500, 1f);
             _colliders = new BoundingBox[IslandsQuantity];
+            SunLight = new SunLight(GraphicsDevice);
             HealthBar = new HealthBar();
             base.Initialize();
         }
@@ -105,6 +108,9 @@ namespace TGC.MonoGame.TP
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
             Song = Content.Load<Song>(ContentFolderMusic + "piratas-del-caribe");
             MediaPlayer.IsRepeating = true;
+            // Sunlight
+            BasicShader = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
+            SunLight.LoadContent(BasicShader);
             // Load water
             Water.LoadContent(Content);
             
@@ -151,7 +157,8 @@ namespace TGC.MonoGame.TP
             {
                 Ship.CheckCollision(collider, HealthBar);
             }
-
+    
+            SunLight.Update(Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
             base.Update(gameTime);
         }
 
@@ -168,7 +175,8 @@ namespace TGC.MonoGame.TP
 
             Rain.Draw(gameTime, FollowCamera);
 
-            Water.Draw(ShipPosition, FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+            Water.Draw(SunLight.Light.Position, FollowCamera, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+            SunLight.Draw(FollowCamera, BasicShader);
 
             foreach (var island in Islands)
             {
