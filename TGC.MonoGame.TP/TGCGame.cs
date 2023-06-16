@@ -46,7 +46,7 @@ namespace TGC.MonoGame.TP
         private GlobalConfigurationSingleton GlobalConfig { get; }
         private MainMenu _menu;
 
-        public GameStatus GameStatus = GameStatus.MainMenu;
+        public GameStatus GameStatus = GameStatus.NormalGame;
         
         /// <summary>
         ///     Constructor del juego.
