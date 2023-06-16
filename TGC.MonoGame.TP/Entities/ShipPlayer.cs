@@ -25,8 +25,6 @@ public class ShipPlayer
 
     private Vector3 Position { get; set; }
 
-    // Cambios del barco
-    // -1, 0, 1, 2, 3, 4 
     private float CurrentVelocity { get; set; }
     private int CurrentVelocityIndex { get; set; } = 1;
     private float LastVelocityChangeTimer { get; set; }
@@ -115,7 +113,7 @@ public class ShipPlayer
         {
             if (IsReactingToCollision)
             {
-                CurrentVelocity += -Math.Abs(CurrentVelocity)/CurrentVelocity * Acceleration * deltaTime;
+                CurrentVelocity += -Math.Abs(CurrentVelocity)/CurrentVelocity * GlobalConfig.PlayerAcceleration * deltaTime;
             }
             else
             {

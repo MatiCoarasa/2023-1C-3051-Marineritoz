@@ -77,9 +77,6 @@ namespace TGC.MonoGame.TP
             Content.RootDirectory = "Content";
         }
 
-        private GraphicsDeviceManager Graphics { get; }
-        private SpriteBatch SpriteBatch { get; set; }
-        
         private Song Song { get; set; }
         
         private SunLight SunLight { get; set; }
@@ -97,7 +94,7 @@ namespace TGC.MonoGame.TP
 
             _menu = new MainMenu(this);
 
-            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
+            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
             IslandGenerator = new IslandGenerator(this);
 
@@ -218,7 +215,7 @@ namespace TGC.MonoGame.TP
                         island.Draw(FollowCamera.View, FollowCamera.Projection);
                     }
 
-                    Ship.Draw(FollowCamera, SpriteBatch, Font);
+                    Ship.Draw(FollowCamera, SpriteBatch, GraphicsDevice.Viewport.Height);
                     HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
                     Gizmos.Draw();
                     break;
