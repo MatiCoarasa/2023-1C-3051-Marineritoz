@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -22,21 +21,17 @@ public class ShipPlayer
 
     private IList<Texture2D> ColorTextures { get; } = new List<Texture2D>();
 
-    private const float Scale = 0.00025f;
+    private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
+
     private Vector3 Position { get; set; }
 
     // Cambios del barco
     // -1, 0, 1, 2, 3, 4 
     private float CurrentVelocity { get; set; }
-    private float[] Velocities { get; } = {-5f, 0f, 2f, 4f, 6f, 8f};
     private int CurrentVelocityIndex { get; set; } = 1;
     private float LastVelocityChangeTimer { get; set; }
-    private const float MinimumSecsBetweenVelocityChanges = .5f;
     
     private float Rotation { get; set; }
-    private const float RotationVelocity = 1f;
-
-    private const float Acceleration = 1f;
 
     private Matrix OBBWorld { get; set; }
     private OrientedBoundingBox ShipBoundingBox { get; set; }
@@ -67,7 +62,7 @@ public class ShipPlayer
         Arsenal.LoadContent();
         // Set Ship oriented bounding box
         var tempAABB = BoundingVolumesExtensions.CreateAABBFrom(Model);
-        tempAABB = BoundingVolumesExtensions.Scale(tempAABB, Scale);
+        tempAABB = BoundingVolumesExtensions.Scale(tempAABB, GlobalConfig.PlayerScale);
         ShipBoundingBox = OrientedBoundingBox.FromAABB(tempAABB);
         ShipBoundingBox.Center = Position;
         ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
@@ -101,7 +96,7 @@ public class ShipPlayer
         var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
         ShipBoundingBox.Center += deltaPosition;
         WaterPosition = Position.GetPositionInWave(totalTime);
-        World = OBBWorld = Matrix.CreateScale(Scale)
+        World = OBBWorld = Matrix.CreateScale(GlobalConfig.PlayerScale)
                            * Matrix.CreateRotationY(Rotation)
                            * Matrix.CreateWorld(Vector3.Zero, - WaterPosition.binormal, WaterPosition.normal)
                            * Matrix.CreateTranslation(WaterPosition.position);
@@ -135,32 +130,30 @@ public class ShipPlayer
             }
         }
         
-        var targetVelocity = Velocities[CurrentVelocityIndex];
+        var targetVelocity = GlobalConfig.PlayerVelocities[CurrentVelocityIndex];
         if (Math.Abs(CurrentVelocity - targetVelocity) < .1f)
         {
             CurrentVelocity = targetVelocity;
         }
-        else if (CurrentVelocity < targetVelocity)
+        else
         {
-            CurrentVelocity += Acceleration * deltaTime;
-        } else if (CurrentVelocity > targetVelocity)
-        {
-            CurrentVelocity -= Acceleration * deltaTime;
+            CurrentVelocity += Math.Sign(targetVelocity - CurrentVelocity) * GlobalConfig.PlayerAcceleration * deltaTime;
         }
+
 
         var prePositionChange = Position;
         var waterVelocityDisplacement = Math.Min(WaterPosition.tangent.Z * 2 * CurrentVelocity, 0);
         Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * (CurrentVelocity - waterVelocityDisplacement);
         var deltaPosition = Position - prePositionChange;
 
-        if (LastVelocityChangeTimer < MinimumSecsBetweenVelocityChanges) return deltaPosition;
+        if (LastVelocityChangeTimer < GlobalConfig.PlayerSecsBetweenChanges) return deltaPosition;
         
         if (keyboardState.IsKeyDown(Keys.W))
         {
             LastVelocityChangeTimer = 0f;
             
             // No permito que 'CurrentVelocityIndex' supere el indice de velocidad maxima (Velocities.Length - 1)
-            CurrentVelocityIndex = Math.Min(CurrentVelocityIndex + 1, Velocities.Length - 1);
+            CurrentVelocityIndex = Math.Min(CurrentVelocityIndex + 1, GlobalConfig.PlayerVelocities.Length - 1);
             GearBox.currentGearBoxOption = CurrentVelocityIndex;
         } else if (keyboardState.IsKeyDown(Keys.S))
         {
@@ -185,11 +178,11 @@ public class ShipPlayer
 
         if (keyboardState.IsKeyDown(Keys.A))
         {
-            Rotation += deltaTime * RotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
+            Rotation += deltaTime * GlobalConfig.PlayerMaxRotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
         }
         if (keyboardState.IsKeyDown(Keys.D))
         {
-            Rotation -= deltaTime * RotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
+            Rotation -= deltaTime * GlobalConfig.PlayerMaxRotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
         }
 
         return Rotation - preRotation;

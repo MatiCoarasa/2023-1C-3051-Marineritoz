@@ -9,6 +9,7 @@ using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
 using TGC.MonoGame.TP.Entities.Light;
+using TGC.MonoGame.TP.Menu;
 
 namespace TGC.MonoGame.TP
 {
@@ -33,16 +34,24 @@ namespace TGC.MonoGame.TP
         public Gizmos Gizmos { get; }
         private const bool GizmosEnabled = false;
         
-        private const int IslandsQuantity = 200;
-
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
         private Water Water { get; set; }
         private float Time { get; }
+        private SpriteFont Font { get; set; }
+        
+        public GraphicsDeviceManager Graphics { get; }
+        public SpriteBatch SpriteBatch { get; set; }
 
         private BoundingBox[] _colliders;
 
         private Rain Rain { get; set; }
+
+        private GlobalConfigurationSingleton GlobalConfig { get; }
+        private MainMenu _menu;
+
+        public GameStatus GameStatus = GameStatus.NormalGame;
+        
         private HealthBar HealthBar { get; set; }
 
         /// <summary>
@@ -57,10 +66,12 @@ namespace TGC.MonoGame.TP
             Graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - 200;
             Graphics.GraphicsProfile = GraphicsProfile.HiDef;
 
-            IsMouseVisible = false;
+            IsMouseVisible = true;
 
             Gizmos = new Gizmos();
             Gizmos.Enabled = GizmosEnabled;
+
+            GlobalConfig = GlobalConfigurationSingleton.GetInstance();
 
             // Carpeta raiz donde va a estar toda la Media.
             Content.RootDirectory = "Content";
@@ -78,19 +89,31 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Initialize()
         {
-            // Apago el backface culling.
-            // Esto se hace por un problema en el diseno del modelo del logo de la materia.
-            // Una vez que empiecen su juego, esto no es mas necesario y lo pueden sacar.
             var rasterizerState = new RasterizerState();
-            //rasterizerState.CullMode = CullMode.None;
             GraphicsDevice.RasterizerState = rasterizerState;
             FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
+            
+            SpriteBatch = new SpriteBatch(GraphicsDevice);
+
+            _menu = new MainMenu(this);
+
+            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
             IslandGenerator = new IslandGenerator(this);
+
+
             Water = new Water(GraphicsDevice);
             Rain = new Rain(Content, GraphicsDevice);
-            Rain.Initialize(100f, 150f, -3f, 500, 1f);
-            _colliders = new BoundingBox[IslandsQuantity];
+            Rain.Initialize(
+                GlobalConfig.RainSize, 
+                GlobalConfig.RainMaxHeight, 
+                GlobalConfig.RainMinHeight, 
+                GlobalConfig.RainDropCount, 
+                GlobalConfig.RainSpeedDrop,
+                GlobalConfig.RainColor
+                );
+
+            _colliders = new BoundingBox[GlobalConfig.IslandsQuantity];
             SunLight = new SunLight(GraphicsDevice);
             HealthBar = new HealthBar();
             base.Initialize();
@@ -105,6 +128,8 @@ namespace TGC.MonoGame.TP
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
             
+            _menu.LoadContent();
+            Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
             Song = Content.Load<Song>(ContentFolderMusic + "piratas-del-caribe");
             MediaPlayer.IsRepeating = true;
@@ -120,7 +145,7 @@ namespace TGC.MonoGame.TP
             HealthBar.LoadContent(Content);
             // Load islands
             IslandGenerator.LoadContent(Content, TextureShader);
-            Islands = IslandGenerator.CreateRandomIslands(IslandsQuantity, 2000, 2000, 50);
+            Islands = IslandGenerator.CreateRandomIslands(GlobalConfig.IslandsQuantity, GlobalConfig.IslandsMaxXSpawn, GlobalConfig.IslandsMaxZSpawn, GlobalConfig.SpawnBoxSize);
             for (var i = 0; i < Islands.Length; i++)
             {
                 _colliders[i] = Islands[i].BoundingBox;
@@ -143,22 +168,25 @@ namespace TGC.MonoGame.TP
                 MediaPlayer.Play(Song);
             }
 
-            Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape)) GameStatus = GameStatus.Exit;
             
-            // Capturar Input teclado
-            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+            switch (GameStatus)
             {
-                //Salgo del juego.
-                Exit();
-            }
+                case GameStatus.NormalGame:
+                    Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
 
-            ShipPosition = Ship.Update(gameTime, FollowCamera);
-            foreach (var collider in _colliders)
-            {
-                Ship.CheckCollision(collider, HealthBar);
+                    ShipPosition = Ship.Update(gameTime, FollowCamera);
+                    foreach (var collider in _colliders)
+                    {
+                        Ship.CheckCollision(collider, HealthBar);
+                    }
+                    SunLight.Update(Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+                    break;
+                case GameStatus.Exit:
+                    Exit();
+                    break;
             }
-    
-            SunLight.Update(Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+            
             base.Update(gameTime);
         }
 
@@ -168,25 +196,35 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(new Color(5, 5, 61));
-
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-
-            Rain.Draw(gameTime, FollowCamera);
-
-            Water.Draw(SunLight.Light.Position, FollowCamera, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
-            SunLight.Draw(FollowCamera, BasicShader);
-
-            foreach (var island in Islands)
+            switch (GameStatus)
             {
-                GraphicsDevice.BlendState = BlendState.Opaque;
-                island.Draw(FollowCamera.View, FollowCamera.Projection);
+                case GameStatus.MainMenu:
+                    GraphicsDevice.Clear(Color.Khaki);
+                    _menu.Draw(gameTime);
+                    break;
+                
+                case GameStatus.NormalGame:
+                    
+                    GraphicsDevice.Clear(GlobalConfig.SkyColor);
+                    Rain.Draw(gameTime, FollowCamera);
+                    Water.Draw(SunLight.Light.Position, FollowCamera, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+                    SunLight.Draw(FollowCamera, BasicShader);
+
+                    foreach (var island in Islands)
+                    {
+                        GraphicsDevice.BlendState = BlendState.Opaque;
+                        island.Draw(FollowCamera.View, FollowCamera.Projection);
+                    }
+
+                    Ship.Draw(FollowCamera, SpriteBatch, Font);
+                    HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
+                    Gizmos.Draw();
+                    break;
             }
 
-            Ship.Draw(FollowCamera, SpriteBatch, GraphicsDevice.Viewport.Height);
-            HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
-            Gizmos.Draw();
+
         }
 
         /// <summary>
