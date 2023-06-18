@@ -39,11 +39,8 @@ namespace TGC.MonoGame.TP.Cameras
         /// </summary>
         /// <param name="gameTime">The Game Time to calculate framerate-independent movement</param>
         /// <param name="followedWorld">The World matrix to follow</param>
-        public override void Update(GameTime gameTime, Matrix followedWorld)
+        public override void Update(float elapsedTime, Matrix followedWorld)
         {
-            // Obtengo el tiempo
-            var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-            
             // Obtengo la posicion de la matriz de mundo que estoy siguiendo
             var followedPosition = followedWorld.Translation;
 

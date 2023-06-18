@@ -78,10 +78,8 @@ public class ShipPlayer
         }
     }
     
-    public Vector3 Update(GameTime gameTime, Camera followCamera)
+    public Vector3 Update(float totalTime, float deltaTime, Camera followCamera)
     {
-        var deltaTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-        var totalTime = Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds);
         LastVelocityChangeTimer += deltaTime;
         LastCollisionTimer += deltaTime;
 
@@ -100,9 +98,9 @@ public class ShipPlayer
                            * Matrix.CreateTranslation(WaterPosition.position);
 
             
-        Arsenal.Update(gameTime, Position, followCamera);
+        Arsenal.Update(deltaTime, Position, followCamera);
 
-        followCamera.Update(gameTime, World);
+        followCamera.Update(deltaTime, World);
         return World.Translation;
     }
     

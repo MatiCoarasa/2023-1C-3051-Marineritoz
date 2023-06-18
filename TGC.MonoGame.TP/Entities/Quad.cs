@@ -12,6 +12,7 @@ namespace TGC.MonoGame.TP.Entities
         private Texture2D Texture { get; set; }
         private IndexBuffer Indices { get; set; }
         private Effect Effect { get; set; }
+        private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
 
         public Quad(GraphicsDevice graphicsDevice, int rows)
         {
@@ -99,14 +100,14 @@ namespace TGC.MonoGame.TP.Entities
         {
             Effect.Parameters["lightPosition"].SetValue(lightPosition);
             Effect.Parameters["eyePosition"].SetValue(camera.Position);
-            Effect.Parameters["ambientColor"].SetValue(new Color(0, 115, 153).ToVector3());
-            Effect.Parameters["diffuseColor"].SetValue(new Color(51, 153, 255).ToVector3());
-            Effect.Parameters["specularColor"].SetValue(new Color(179, 236, 255).ToVector3());
-            Effect.Parameters["KAmbient"].SetValue(0.8f);
-            Effect.Parameters["KDiffuse"].SetValue(0.5f);
-            Effect.Parameters["KSpecular"].SetValue(0.2f);
-            Effect.Parameters["shininess"].SetValue(2.0f);
-            Effect.Parameters["DiffuseColor"].SetValue(new Color(0, 204, 255).ToVector3());
+            Effect.Parameters["ambientColor"].SetValue(GlobalConfig.WaterAmbientColor.ToVector3());
+            Effect.Parameters["diffuseColor"].SetValue(GlobalConfig.WaterDiffuseColor.ToVector3());
+            Effect.Parameters["specularColor"].SetValue(GlobalConfig.WaterSpecularColor.ToVector3());
+            Effect.Parameters["KAmbient"].SetValue(GlobalConfig.WaterKAmbient);
+            Effect.Parameters["KDiffuse"].SetValue(GlobalConfig.WaterKDiffuse);
+            Effect.Parameters["KSpecular"].SetValue(GlobalConfig.WaterKSpecular);
+            Effect.Parameters["shininess"].SetValue(GlobalConfig.WaterShininess);
+            Effect.Parameters["DiffuseColor"].SetValue(GlobalConfig.WaterColor.ToVector3());
             Effect.Parameters["World"].SetValue(world);
             Effect.Parameters["View"].SetValue(camera.View);
             Effect.Parameters["Projection"].SetValue(camera.Projection);

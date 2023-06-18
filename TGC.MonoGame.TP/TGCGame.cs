@@ -1,4 +1,5 @@
 ﻿using System;
+using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -10,6 +11,8 @@ using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
 using TGC.MonoGame.TP.Entities.Light;
 using TGC.MonoGame.TP.Menu;
+using TGC.MonoGame.TP.Menu.GodMode;
+using TGC.MonoGame.TP.Utils.GUI.ImGuiNET;
 
 namespace TGC.MonoGame.TP
 {
@@ -53,6 +56,9 @@ namespace TGC.MonoGame.TP
         public GameStatus GameStatus = GameStatus.NormalGame;
         
         private HealthBar HealthBar { get; set; }
+        private ImGuiRenderer ImGuiRenderer { get; set; }
+        
+        private float TotalTime { get; set; }
 
         /// <summary>
         ///     Constructor del juego.
@@ -89,7 +95,9 @@ namespace TGC.MonoGame.TP
             var rasterizerState = new RasterizerState();
             GraphicsDevice.RasterizerState = rasterizerState;
             FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
-            
+            ImGuiRenderer = new ImGuiRenderer(this);
+            ImGuiRenderer.RebuildFontAtlas();
+
             SpriteBatch = new SpriteBatch(GraphicsDevice);
 
             _menu = new MainMenu(this);
@@ -97,7 +105,7 @@ namespace TGC.MonoGame.TP
             FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             Ship = new ShipPlayer(this);
             IslandGenerator = new IslandGenerator(this);
-
+            TotalTime = 0;
 
             Water = new Water(GraphicsDevice);
             Rain = new Rain(Content, GraphicsDevice);
@@ -149,6 +157,8 @@ namespace TGC.MonoGame.TP
             }
             
             Rain.Load();
+            
+            Options.LoadModifiers();
             base.LoadContent();
         }
 
@@ -159,25 +169,27 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
+            TotalTime += (float) gameTime.ElapsedGameTime.TotalSeconds;
             if (MediaPlayer.State == MediaState.Stopped)
             {
                 MediaPlayer.Volume = 0.01f;
                 MediaPlayer.Play(Song);
             }
 
-            if (Keyboard.GetState().IsKeyDown(Keys.Escape)) GameStatus = GameStatus.Exit;
-            
-            switch (GameStatus)
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
-                case GameStatus.NormalGame:
-                    Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
+                GameStatus = GameStatus.Exit;
+            }
 
-                    ShipPosition = Ship.Update(gameTime, FollowCamera);
-                    foreach (var collider in _colliders)
-                    {
-                        Ship.CheckCollision(collider, HealthBar);
-                    }
-                    SunLight.Update(Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+            if (Keyboard.GetState().IsKeyDown(Keys.G))
+            {
+                GameStatus = GameStatus.GodModeGame;
+            }
+
+            switch (GameStatus) {
+                case GameStatus.GodModeGame:
+                case GameStatus.NormalGame:
+                    GameUpdates(gameTime);
                     break;
                 case GameStatus.Exit:
                     Exit();
@@ -185,6 +197,25 @@ namespace TGC.MonoGame.TP
             }
             
             base.Update(gameTime);
+        }
+
+        private void GameUpdates(GameTime gameTime)
+        {
+            Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
+
+            ShipPosition = Ship.Update(TotalTime, (float) gameTime.ElapsedGameTime.TotalSeconds, FollowCamera);
+            foreach (var collider in _colliders)
+            {
+                Ship.CheckCollision(collider, HealthBar);
+            }
+            SunLight.Update(TotalTime);
+        }
+
+        public void DrawSampleExplorer(GameTime gameTime)
+        {
+            ImGuiRenderer.BeforeLayout(gameTime);
+            Options.DrawLayout();
+            ImGuiRenderer.AfterLayout();
         }
 
         /// <summary>
@@ -201,27 +232,30 @@ namespace TGC.MonoGame.TP
                     GraphicsDevice.Clear(Color.Khaki);
                     _menu.Draw(gameTime);
                     break;
-                
+                case GameStatus.GodModeGame:
+                    GameDraw();
+                    DrawSampleExplorer(gameTime);
+                    break;
                 case GameStatus.NormalGame:
-                    
-                    GraphicsDevice.Clear(GlobalConfig.SkyColor);
-                    Rain.Draw(gameTime, FollowCamera);
-                    Water.Draw(SunLight.Light.Position, FollowCamera, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
-                    SunLight.Draw(FollowCamera, BasicShader);
-
-                    foreach (var island in Islands)
-                    {
-                        GraphicsDevice.BlendState = BlendState.Opaque;
-                        island.Draw(FollowCamera.View, FollowCamera.Projection);
-                    }
-
-                    Ship.Draw(FollowCamera, SpriteBatch, GraphicsDevice.Viewport.Height);
-                    HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
-                    Gizmos.Draw();
+                    GameDraw();
                     break;
             }
+        }
 
-
+        private void GameDraw()
+        {
+            GraphicsDevice.Clear(GlobalConfig.SkyColor);
+            Rain.Draw(TotalTime, FollowCamera);
+            Water.Draw(SunLight.Light.Position, FollowCamera, TotalTime);
+            SunLight.Draw(FollowCamera, BasicShader);
+            foreach (var island in Islands)
+            {
+                GraphicsDevice.BlendState = BlendState.Opaque;
+                island.Draw(FollowCamera.View, FollowCamera.Projection);
+            }
+            Ship.Draw(FollowCamera, SpriteBatch, GraphicsDevice.Viewport.Height);
+            HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
+            Gizmos.Draw();
         }
 
         /// <summary>

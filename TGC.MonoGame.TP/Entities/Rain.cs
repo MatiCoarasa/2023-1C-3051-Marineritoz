@@ -115,7 +115,7 @@ namespace TGC.MonoGame.TP
             Effect = Content.Load<Effect>(ContentFolderEffects + "RainShader");
         }
         
-        public void Draw(GameTime gameTime, Camera camera)
+        public void Draw(float totalTime, Camera camera)
         {
             GraphicsDevice.BlendState = BlendState.AlphaBlend;
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
@@ -123,7 +123,7 @@ namespace TGC.MonoGame.TP
             Effect.Parameters["View"].SetValue(camera.View);
             Effect.Parameters["Projection"].SetValue(camera.Projection);
             Effect.Parameters["DiffuseColor"].SetValue(_color.ToVector3());
-            Effect.Parameters["Time"]?.SetValue(Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+            Effect.Parameters["Time"]?.SetValue(totalTime);
             Effect.Parameters["MaxHeight"]?.SetValue(_maxHeight);
             Effect.Parameters["MinHeight"]?.SetValue(_minHeight);
             Effect.Parameters["Speed"]?.SetValue(_speedBaseDrop);
