@@ -39,7 +39,8 @@ namespace TGC.MonoGame.TP.Cameras
         /// </summary>
         /// <param name="gameTime">The Game Time to calculate framerate-independent movement</param>
         /// <param name="followedWorld">The World matrix to follow</param>
-        public override void Update(GameTime gameTime, Matrix followedWorld)
+        /// <param name="isGameActive">bool that indicates if the game window is active</param>
+        public override void Update(GameTime gameTime, Matrix followedWorld, bool isGameActive)
         {
             // Obtengo el tiempo
             var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);

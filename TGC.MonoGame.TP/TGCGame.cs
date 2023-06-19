@@ -29,6 +29,9 @@ namespace TGC.MonoGame.TP
         private Effect TextureShader { get; set; }
         public Gizmos Gizmos { get; }
         private const bool GizmosEnabled = false;
+
+        private bool _justChangedScreens;
+        private float _timeSinceLastScreenChange;
         
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
@@ -46,7 +49,7 @@ namespace TGC.MonoGame.TP
         private GlobalConfigurationSingleton GlobalConfig { get; }
         private MainMenu _menu;
 
-        public GameStatus GameStatus = GameStatus.NormalGame;
+        public GameStatus GameStatus = GameStatus.MainMenu;
         
         /// <summary>
         ///     Constructor del juego.
@@ -142,13 +145,23 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
-            if (Keyboard.GetState().IsKeyDown(Keys.Escape)) GameStatus = GameStatus.Exit;
-            
             switch (GameStatus)
             {
+                case GameStatus.MainMenu:
+                    _menu.Update(gameTime);
+                    if (Keyboard.GetState().IsKeyDown(Keys.Escape) && !_justChangedScreens)
+                    {
+                        GameStatus = GameStatus.Exit;
+                    }
+                    break;
                 case GameStatus.NormalGame:
+                    if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+                    {
+                        GameStatus = GameStatus.MainMenu;
+                        _timeSinceLastScreenChange = 0;
+                        _justChangedScreens = true;
+                    }
                     Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
-
                     Ship.Update(gameTime, FollowCamera);
                     foreach (var collider in _colliders)
                     {
@@ -159,7 +172,12 @@ namespace TGC.MonoGame.TP
                     Exit();
                     break;
             }
-            
+
+            _timeSinceLastScreenChange += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
+            if (_justChangedScreens && _timeSinceLastScreenChange > 2f)
+            {
+                _justChangedScreens = false;
+            }
             base.Update(gameTime);
         }
 

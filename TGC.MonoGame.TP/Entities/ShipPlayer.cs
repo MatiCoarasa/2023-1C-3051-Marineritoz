@@ -83,7 +83,7 @@ public class ShipPlayer
             
         World = OBBWorld = Matrix.CreateScale(GlobalConfig.PlayerScale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
 
-        followCamera.Update(gameTime, World);
+        followCamera.Update(gameTime, World, Game.IsActive);
     }
     
     private Vector3 ResolveShipMovement(float deltaTime, KeyboardState keyboardState)

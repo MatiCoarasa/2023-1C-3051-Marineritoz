@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 
 namespace TGC.MonoGame.TP.Menu;
@@ -26,10 +27,7 @@ public class MainMenu
                 new ("Start game", GameStatus.NormalGame),
                 new ("Exit", GameStatus.Exit),
             };
-            _buttons = new ButtonsGrid(
-                new Point(_screenWidth/2, _screenHeight/2), 
-                new Point(130, 300), 
-                buttons);
+            _buttons = new ButtonsGrid(game, _screenWidth/2, _screenHeight/2, buttons);
         }
 
         /// <summary>
@@ -50,6 +48,7 @@ public class MainMenu
         /// </summary>
         public void Update(GameTime gameTime)
         {
+            _buttons.Update(Mouse.GetState());
         }
 
         /// <summary>
