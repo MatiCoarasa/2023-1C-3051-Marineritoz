@@ -17,7 +17,7 @@ public class ShipPlayer
     private Model Model { get; set; }
     private WaterPosition WaterPosition { get; set; }
     private Effect Effect { get; set; }
-    private Matrix World { get; set; }
+    public Matrix World { get; set; }
 
     private IList<Texture2D> ColorTextures { get; } = new List<Texture2D>();
 
@@ -184,7 +184,7 @@ public class ShipPlayer
         return Rotation - preRotation;
     }
 
-    public void Draw(Camera followCamera, SpriteBatch spriteBatch, float height)
+    public void Draw(Camera followCamera, SpriteBatch spriteBatch, float height, bool isNormalCamera)
     {
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
@@ -194,7 +194,10 @@ public class ShipPlayer
 
         foreach (var mesh in Model.Meshes)
         {
-            Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
+            var world = isNormalCamera
+                ? World
+                : Matrix.CreateScale(0.2f) * Matrix.CreateRotationX((float)Math.PI) * World * Matrix.CreateTranslation(0, 1.2f, 0);
+            Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * world);
             foreach (var meshPart in mesh.MeshParts)
             {
                 meshPart.Effect.GraphicsDevice.SetVertexBuffer(meshPart.VertexBuffer);
@@ -210,7 +213,7 @@ public class ShipPlayer
                 index++;
             }
         }
-        GearBox.Draw(spriteBatch, height);
+        if (isNormalCamera) GearBox.Draw(spriteBatch, height);
 
         Arsenal.Draw(followCamera);
 

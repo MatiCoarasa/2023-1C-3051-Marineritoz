@@ -24,16 +24,38 @@ float3 eyePosition;
 
 float Time = 0;
 
+texture baseTexture;
+sampler2D textureSampler = sampler_state
+{
+    Texture = (baseTexture);
+    MagFilter = Linear;
+    MinFilter = Linear;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+
+texture environmentMap;
+samplerCUBE environmentMapSampler = sampler_state
+{
+    Texture = (environmentMap);
+    MagFilter = Linear;
+    MinFilter = Linear;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+
 struct VertexShaderInput
 {
 	float4 Position : POSITION0;
 	float4 Normal: NORMAL;
+    float2 TextureCoordinates : TEXCOORD0;
 };
 
 struct VertexShaderOutput
 {
 	float4 Position : SV_POSITION;
     float4 WorldPosition : TEXCOORD1;
+    float2 TextureCoordinates : TEXCOORD0;
     float3 Normal : TEXCOORD2;    
 };
 
@@ -97,7 +119,27 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
     output.Position = mul(viewPosition, Projection);
     // Final Normal of Wave
     output.Normal = normal;
+    output.TextureCoordinates = input.TextureCoordinates;
 
+    return output;
+}
+
+VertexShaderOutput MainNormalVS(in VertexShaderInput input)
+{
+    // Clear the output
+	VertexShaderOutput output = (VertexShaderOutput)0;
+	// Model space to World space
+    float4 worldPosition = mul(input.Position, World);
+	float3 tangent = float3(1, 0, 0);
+    float3 binormal = float3(0, 0, 1);
+    float3 normal = normalize(cross(binormal, tangent));
+    output.WorldPosition = worldPosition;
+    // WorldViewProjection
+    float4 viewPosition = mul(worldPosition, View);
+    output.Position = mul(viewPosition, Projection);
+    // Final Normal of Wave
+    output.Normal = normal;
+    output.TextureCoordinates = input.TextureCoordinates;
     return output;
 }
 
@@ -121,6 +163,45 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     return finalColor;
 }
 
+float4 EnvironmentMapWithLightPS(VertexShaderOutput input) : COLOR
+{
+   // Base vectors
+    float3 lightDirection = normalize(lightPosition - input.WorldPosition.xyz);
+    float3 viewDirection = normalize(eyePosition - input.WorldPosition.xyz);
+    float3 halfVector = normalize(lightDirection + viewDirection);
+    
+    // Calculate the diffuse light
+    float NdotL = saturate(dot(input.Normal, lightDirection));
+    float3 diffuseLight = KDiffuse * diffuseColor * NdotL;
+
+    // Calculate the specular light
+    float NdotH = dot(input.Normal, halfVector);
+    float3 specularLight = sign(NdotL) * KSpecular * specularColor * pow(saturate(NdotH), shininess);
+            
+    // Final calculation
+    float4 finalColor = float4(saturate(ambientColor * KAmbient + diffuseLight) * DiffuseColor + specularLight, 1);
+
+	//Obtener texel de CubeMap
+	float3 reflection = reflect(viewDirection, input.Normal);
+	float3 reflectionColor = texCUBE(environmentMapSampler, reflection).rgb;
+
+    return float4(lerp(finalColor, reflectionColor, 0.2), 1);
+}
+
+float4 EnvironmentMapPS(VertexShaderOutput input) : COLOR
+{
+	//Normalizar vectores
+	float3 normal = normalize(input.Normal.xyz);
+    
+	//Obtener texel de CubeMap
+	float3 view = normalize(eyePosition.xyz - input.WorldPosition.xyz);
+	float3 reflection = reflect(view, normal);
+	float3 reflectionColor = texCUBE(environmentMapSampler, reflection).rgb;
+
+    float fresnel = saturate((1.0 - dot(normal, view)));
+    return float4(lerp(DiffuseColor, reflectionColor, fresnel), 1);
+}
+
 technique OceanDrawing
 {
 	pass P0
@@ -128,4 +209,13 @@ technique OceanDrawing
 		VertexShader = compile VS_SHADERMODEL MainVS();
 		PixelShader = compile PS_SHADERMODEL MainPS();
 	}
+};
+
+technique EnvironmentMapDrawing
+{
+    pass Pass0
+    {
+        VertexShader = compile VS_SHADERMODEL MainVS();
+        PixelShader = compile PS_SHADERMODEL EnvironmentMapWithLightPS();
+    }
 };

@@ -31,7 +31,7 @@ namespace TGC.MonoGame.TP.Entities
             float subdivisionPosition = 2f / rows;
             // Si queremos que todo el quad tenga la misma textura
             // float subdivisionTexture = 1f / rows;
-            List<VertexPositionColorNormal> vertices = new List<VertexPositionColorNormal>();
+            List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
 
             /*
              * IMPORTANTE:
@@ -42,14 +42,15 @@ namespace TGC.MonoGame.TP.Entities
             {
                 for (float j = 0; j <= rows; j++)
                 {
-                    vertices.Add(new VertexPositionColorNormal(
+                    vertices.Add(new VertexPositionNormalTexture(
                         new Vector3(Convert.ToSingle(i * subdivisionPosition - 1), 0, Convert.ToSingle(j * subdivisionPosition - 1)),
-                        Color.Aqua,
-                        Vector3.UnitY)
+                        Vector3.UnitY,
+                        // new Vector2(Convert.ToSingle(subdivisionTexture * i), Convert.ToSingle(subdivisionTexture * j)))
+                        new Vector2(Convert.ToSingle(i % 2 == 0 ? 0 : 1), Convert.ToSingle(j % 2 == 0 ? 0 : 1)))
                     );
                 }
             }
-            Vertices = new VertexBuffer(graphicsDevice, VertexPositionColorNormal.VertexDeclaration, vertices.Count,
+            Vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count,
                 BufferUsage.None);
             Vertices.SetData(vertices.ToArray());
         }
@@ -89,6 +90,16 @@ namespace TGC.MonoGame.TP.Entities
             Indices.SetData(indices.ToArray());
         }
 
+        public void SetOceanDrawing()
+        {
+            Effect.CurrentTechnique = Effect.Techniques["OceanDrawing"];
+        }
+
+        public void SetEnvironmentMappingDrawing()
+        {
+            Effect.CurrentTechnique = Effect.Techniques["EnvironmentMapDrawing"];
+        }
+
         /// <summary>
         ///     Draw the Quad.
         /// </summary>
@@ -96,10 +107,11 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="view">The view matrix, normally from the camera.</param>
         /// <param name="projection">The projection matrix, normally from the application.</param>
         /// <param name="time">Time in second since the game started</param>
-        public void Draw(Vector3 lightPosition, Camera camera, Matrix world, float time)
+        public void Draw(Vector3 lightPosition, Camera camera, Matrix world, float time, RenderTargetCube renderTargetCube)
         {
             Effect.Parameters["lightPosition"].SetValue(lightPosition);
             Effect.Parameters["eyePosition"].SetValue(camera.Position);
+            Effect.Parameters["environmentMap"].SetValue(renderTargetCube);
             Effect.Parameters["ambientColor"].SetValue(GlobalConfig.WaterAmbientColor.ToVector3());
             Effect.Parameters["diffuseColor"].SetValue(GlobalConfig.WaterDiffuseColor.ToVector3());
             Effect.Parameters["specularColor"].SetValue(GlobalConfig.WaterSpecularColor.ToVector3());

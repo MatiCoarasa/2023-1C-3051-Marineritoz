@@ -37,7 +37,7 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="view"></param>
         /// <param name="projection"></param>
         /// <param name="time"></param>
-        public void Draw(Vector3 lightPosition, Camera camera, float time)
+        public void Draw(Vector3 lightPosition, Camera camera, float time, RenderTargetCube renderTargetCube)
         {
             const float escala = 500f;
             var world = Matrix.CreateScale(escala);
@@ -45,7 +45,17 @@ namespace TGC.MonoGame.TP.Entities
             GraphicsDevice.BlendState = BlendState.Opaque;
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             
-            Quad.Draw(lightPosition, camera, world, time);
+            Quad.Draw(lightPosition, camera, world, time, renderTargetCube);
+        }
+        
+        public void SetOceanDrawing()
+        {
+            Quad.SetOceanDrawing();
+        }
+
+        public void SetEnvironmentMappingDrawing()
+        {
+            Quad.SetEnvironmentMappingDrawing();
         }
     }
 }
