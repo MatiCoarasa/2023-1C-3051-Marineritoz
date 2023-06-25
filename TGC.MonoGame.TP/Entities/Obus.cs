@@ -37,11 +37,8 @@ namespace TGC.MonoGame.TP.Entities
             Game = game;
         }
 
-        public void Update(GameTime gameTime, Vector3 ShipPosition, Vector3 cannonDirection, float angle)
+        public void Update(float elapsedTime, Vector3 ShipPosition, Vector3 cannonDirection, float angle)
         {
-            var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-
-
             if (World.Translation.Y < -20f)
             {
                 Firing = false;

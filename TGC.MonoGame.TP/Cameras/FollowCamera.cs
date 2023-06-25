@@ -39,11 +39,10 @@ namespace TGC.MonoGame.TP.Cameras
         /// </summary>
         /// <param name="gameTime">The Game Time to calculate framerate-independent movement</param>
         /// <param name="followedWorld">The World matrix to follow</param>
-        public override void Update(GameTime gameTime, Matrix followedWorld)
+        /// <param name="isGameActive">bool that indicates if the game window is active</param>
+        public override void Update(GameTime gameTime, Matrix followedWorld, bool isGameActive)
         {
-            // Obtengo el tiempo
             var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-            
             // Obtengo la posicion de la matriz de mundo que estoy siguiendo
             var followedPosition = followedWorld.Translation;
 
@@ -76,7 +75,7 @@ namespace TGC.MonoGame.TP.Cameras
             
             // Calculo la posicion del a camara
             // tomo la posicion que estoy siguiendo, agrego un offset en los ejes Y y Derecha
-            var offsetedPosition = followedPosition 
+            Position = followedPosition 
                 + CurrentRightVector * AxisDistanceToTarget
                 + Vector3.Up * AxisDistanceToTarget;
 
@@ -87,7 +86,7 @@ namespace TGC.MonoGame.TP.Cameras
             // Calcular el vector Adelante haciendo la resta entre el destino y el origen
             // y luego normalizandolo (Esta operacion es cara!)
             // (La siguiente operacion necesita vectores normalizados)
-            var forward = (followedPosition - offsetedPosition);
+            var forward = (followedPosition - Position);
             forward.Normalize();
 
             // Obtengo el vector Derecha asumiendo que la camara tiene el vector Arriba apuntando hacia arriba
@@ -100,7 +99,7 @@ namespace TGC.MonoGame.TP.Cameras
 
             // Calculo la matriz de Vista de la camara usando la Posicion, La Posicion a donde esta mirando,
             // y su vector Arriba
-            View = Matrix.CreateLookAt(offsetedPosition, followedPosition, cameraCorrectUp);
+            View = Matrix.CreateLookAt(Position, followedPosition, cameraCorrectUp);
         }
 
     }

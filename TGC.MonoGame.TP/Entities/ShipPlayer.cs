@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -22,63 +21,61 @@ public class ShipPlayer
 
     private IList<Texture2D> ColorTextures { get; } = new List<Texture2D>();
 
-    private const float Scale = 0.00025f;
+    private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
+
     private Vector3 Position { get; set; }
 
-    // Cambios del barco
-    // -1, 0, 1, 2, 3, 4 
     private float CurrentVelocity { get; set; }
-    private float[] Velocities { get; } = {-5f, 0f, 2f, 4f, 6f, 8f};
     private int CurrentVelocityIndex { get; set; } = 1;
     private float LastVelocityChangeTimer { get; set; }
-    private const float MinimumSecsBetweenVelocityChanges = .5f;
     
     private float Rotation { get; set; }
-    private const float RotationVelocity = 1f;
-
-    private const float Acceleration = 1f;
 
     private Matrix OBBWorld { get; set; }
     private OrientedBoundingBox ShipBoundingBox { get; set; }
     private bool HasCollisioned { get; set; }
     private bool IsReactingToCollision { get; set; }
     private float LastCollisionTimer { get; set; } = 0;
+
+    private bool _reactToKeyboard;
     
     private GearBox GearBox { get; set; }
 
     Arsenal Arsenal { get; set; }
 
     // Uso el constructor como el Initialize
-    public ShipPlayer(TGCGame game)
+    public ShipPlayer(TGCGame game, bool reactToKeyboard)
     {
         World = Matrix.Identity;
         Position = Vector3.Zero;
         Rotation = 0f;
         Game = game;
+        _reactToKeyboard = reactToKeyboard; 
         WaterPosition = new WaterPosition();
         GearBox = new GearBox();
         Arsenal = new Arsenal(game, 15, World.Translation);
     }
 
-    public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content, Effect effect)
+    public void LoadContent(Effect effect)
     {
         Effect = effect;
-        Model = content.Load<Model>(ContentFolder3D + "ShipA/Ship");
+        Model = Game.Content.Load<Model>(ContentFolder3D + "ShipA/Ship");
         Arsenal.LoadContent();
         // Set Ship oriented bounding box
         var tempAABB = BoundingVolumesExtensions.CreateAABBFrom(Model);
-        tempAABB = BoundingVolumesExtensions.Scale(tempAABB, Scale);
+        tempAABB = BoundingVolumesExtensions.Scale(tempAABB, GlobalConfig.PlayerScale);
         ShipBoundingBox = OrientedBoundingBox.FromAABB(tempAABB);
         ShipBoundingBox.Center = Position;
         ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
         
-        GearBox.LoadContent(graphicsDevice, content);
-        Arsenal.LoadContent(content, Effect);
+        GearBox.LoadContent(Game.GraphicsDevice, Game.Content);
+        Arsenal.LoadContent(Game.Content, Effect);
 
         foreach (var mesh in Model.Meshes)
         {
             foreach (var meshPart in mesh.MeshParts)
             {
+                
                 ColorTextures.Add(((BasicEffect)meshPart.Effect).Texture);
                 meshPart.Effect = Effect;
             }
@@ -89,27 +86,32 @@ public class ShipPlayer
     {
         var deltaTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
         var totalTime = Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds);
+        
         LastVelocityChangeTimer += deltaTime;
         LastCollisionTimer += deltaTime;
 
         // Capturar Input teclado
-        var keyboardState = Keyboard.GetState();
-        
-        var deltaRotation = ResolveShipRotation(deltaTime, keyboardState);
-        ShipBoundingBox.Rotate(Matrix.CreateRotationY(deltaRotation));
+        if (_reactToKeyboard)
+        {
+            var keyboardState = Keyboard.GetState();
 
-        var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
-        ShipBoundingBox.Center += deltaPosition;
+            var deltaRotation = ResolveShipRotation(deltaTime, keyboardState);
+            ShipBoundingBox.Rotate(Matrix.CreateRotationY(deltaRotation));
+
+            var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
+            ShipBoundingBox.Center += deltaPosition;
+        }
+
         WaterPosition = Position.GetPositionInWave(totalTime);
-        World = OBBWorld = Matrix.CreateScale(Scale)
+        World = OBBWorld = Matrix.CreateScale(GlobalConfig.PlayerScale)
                            * Matrix.CreateRotationY(Rotation)
                            * Matrix.CreateWorld(Vector3.Zero, - WaterPosition.binormal, WaterPosition.normal)
                            * Matrix.CreateTranslation(WaterPosition.position);
 
             
-        Arsenal.Update(gameTime, Position, followCamera);
+        Arsenal.Update(deltaTime, Position, followCamera);
 
-        followCamera.Update(gameTime, World);
+        followCamera.Update(gameTime, World, Game.IsActive);
         return World.Translation;
     }
     
@@ -120,7 +122,7 @@ public class ShipPlayer
         {
             if (IsReactingToCollision)
             {
-                CurrentVelocity += -Math.Abs(CurrentVelocity)/CurrentVelocity * Acceleration * deltaTime;
+                CurrentVelocity += -Math.Abs(CurrentVelocity)/CurrentVelocity * GlobalConfig.PlayerAcceleration * deltaTime;
             }
             else
             {
@@ -135,32 +137,30 @@ public class ShipPlayer
             }
         }
         
-        var targetVelocity = Velocities[CurrentVelocityIndex];
+        var targetVelocity = GlobalConfig.PlayerVelocities[CurrentVelocityIndex];
         if (Math.Abs(CurrentVelocity - targetVelocity) < .1f)
         {
             CurrentVelocity = targetVelocity;
         }
-        else if (CurrentVelocity < targetVelocity)
+        else
         {
-            CurrentVelocity += Acceleration * deltaTime;
-        } else if (CurrentVelocity > targetVelocity)
-        {
-            CurrentVelocity -= Acceleration * deltaTime;
+            CurrentVelocity += Math.Sign(targetVelocity - CurrentVelocity) * GlobalConfig.PlayerAcceleration * deltaTime;
         }
+
 
         var prePositionChange = Position;
         var waterVelocityDisplacement = Math.Min(WaterPosition.tangent.Z * 2 * CurrentVelocity, 0);
         Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * (CurrentVelocity - waterVelocityDisplacement);
         var deltaPosition = Position - prePositionChange;
 
-        if (LastVelocityChangeTimer < MinimumSecsBetweenVelocityChanges) return deltaPosition;
+        if (LastVelocityChangeTimer < GlobalConfig.PlayerSecsBetweenChanges) return deltaPosition;
         
         if (keyboardState.IsKeyDown(Keys.W))
         {
             LastVelocityChangeTimer = 0f;
             
             // No permito que 'CurrentVelocityIndex' supere el indice de velocidad maxima (Velocities.Length - 1)
-            CurrentVelocityIndex = Math.Min(CurrentVelocityIndex + 1, Velocities.Length - 1);
+            CurrentVelocityIndex = Math.Min(CurrentVelocityIndex + 1, GlobalConfig.PlayerVelocities.Length - 1);
             GearBox.currentGearBoxOption = CurrentVelocityIndex;
         } else if (keyboardState.IsKeyDown(Keys.S))
         {
@@ -185,11 +185,11 @@ public class ShipPlayer
 
         if (keyboardState.IsKeyDown(Keys.A))
         {
-            Rotation += deltaTime * RotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
+            Rotation += deltaTime * GlobalConfig.PlayerMaxRotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
         }
         if (keyboardState.IsKeyDown(Keys.D))
         {
-            Rotation -= deltaTime * RotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
+            Rotation -= deltaTime * GlobalConfig.PlayerMaxRotationVelocity * Math.Clamp(CurrentVelocity/3, -1f, 1f);
         }
 
         return Rotation - preRotation;

@@ -54,13 +54,10 @@ namespace TGC.MonoGame.TP.Entities
             GunShotEffect = Game.Content.Load<SoundEffect>(ContentFolderSounds + "gunshot");
         }
 
-        public void Update(GameTime gameTime, Vector3 shipPosition, Camera Camera)
+        public void Update(float elapsedTime, Vector3 shipPosition, Camera Camera)
         {
             var keyboardState = Keyboard.GetState();
             ShipPosition = shipPosition;
-
-            var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-
             timerCooldownShoot += elapsedTime;
 
             // Obtengo el vector que mira hacia la camara y lo pongo en negativo para que sea el "donde mira la camara"
@@ -69,7 +66,7 @@ namespace TGC.MonoGame.TP.Entities
 
             foreach( Obus oneBullet  in _bullets )
             {
-                oneBullet.Update(gameTime, ShipPosition, targetDirectionXZ, MathHelper.ToRadians(angle));
+                oneBullet.Update(elapsedTime, ShipPosition, targetDirectionXZ, MathHelper.ToRadians(angle));
             }
 
             if (keyboardState.IsKeyDown(Keys.Up) && angle < 49.9f)
