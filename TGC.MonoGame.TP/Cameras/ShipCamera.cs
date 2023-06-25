@@ -53,16 +53,12 @@ namespace TGC.MonoGame.TP.Cameras
         /// <param name="gameTime">The Game Time to calculate framerate-independent movement</param>
         /// <param name="followedWorld">The World matrix to follow</param>
         /// <param name="isGameActive">Boolean indicating if the game window is active</param>
-
         public override void Update(GameTime gameTime, Matrix followedWorld, bool isGameActive)
         {
-            // Obtengo el tiempo
-            var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-
             // Obtengo la posicion de la matriz de mundo que estoy siguiendo
             var followedPosition = followedWorld.Translation;
 
-            if (isGameActive) detectarMovimiento(elapsedTime);
+            if (isGameActive) detectarMovimiento((float) gameTime.ElapsedGameTime.TotalSeconds);
 
             Position = followedPosition + new Vector3(radius * MathF.Cos(MathHelper.ToRadians(yaw) * MathF.Cos(MathHelper.ToRadians(pitch)))
                     , radius * MathF.Sin(MathHelper.ToRadians(pitch))
@@ -121,7 +117,7 @@ namespace TGC.MonoGame.TP.Cameras
             }
 
 
-            if (currentMouseState.Y > 4 && pitch > 0f)
+            if (currentMouseState.Y > 4 && pitch > 10f)
             {
 
                 pitch -= factor * sens / 2 * elapsedTime;

@@ -1,13 +1,18 @@
 ﻿using System;
+using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 using TGC.MonoGame.TP.Content.Gizmos;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
 using TGC.MonoGame.TP.Entities.Islands;
+using TGC.MonoGame.TP.Entities.Light;
 using TGC.MonoGame.TP.Menu;
+using TGC.MonoGame.TP.Menu.GodMode;
+using TGC.MonoGame.TP.Utils.GUI.ImGuiNET;
 
 namespace TGC.MonoGame.TP
 {
@@ -26,7 +31,9 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderTextures = "Textures/";
         private Camera FollowCamera { get; set; }
         private ShipPlayer Ship { get; set; }
+        private Vector3 ShipPosition { get; set; }
         private Effect TextureShader { get; set; }
+        private Effect BasicShader { get; set; }
         public Gizmos Gizmos { get; }
         private const bool GizmosEnabled = false;
 
@@ -51,6 +58,11 @@ namespace TGC.MonoGame.TP
 
         public GameStatus GameStatus = GameStatus.MainMenu;
         
+        private HealthBar HealthBar { get; set; }
+        private ImGuiRenderer ImGuiRenderer { get; set; }
+        
+        private float TotalTime { get; set; }
+
         /// <summary>
         ///     Constructor del juego.
         /// </summary>
@@ -74,6 +86,9 @@ namespace TGC.MonoGame.TP
             Content.RootDirectory = "Content";
         }
 
+        private Song Song { get; set; }
+        
+        private SunLight SunLight { get; set; }
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
         ///     Escribir aqui el codigo de inicializacion: el procesamiento que podemos pre calcular para nuestro juego.
@@ -82,15 +97,17 @@ namespace TGC.MonoGame.TP
         {
             var rasterizerState = new RasterizerState();
             GraphicsDevice.RasterizerState = rasterizerState;
-            
+            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
+            ImGuiRenderer = new ImGuiRenderer(this);
+            ImGuiRenderer.RebuildFontAtlas();
+
             SpriteBatch = new SpriteBatch(GraphicsDevice);
 
             _menu = new MainMenu(this);
 
-            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
-            Ship = new ShipPlayer(this);
+            Ship = new ShipPlayer(this, true);
             IslandGenerator = new IslandGenerator(this);
-
+            TotalTime = 0;
 
             Water = new Water(GraphicsDevice);
             Rain = new Rain(Content, GraphicsDevice);
@@ -104,7 +121,8 @@ namespace TGC.MonoGame.TP
                 );
 
             _colliders = new BoundingBox[GlobalConfig.IslandsQuantity];
-            
+            SunLight = new SunLight(GraphicsDevice);
+            HealthBar = new HealthBar();
             base.Initialize();
         }
 
@@ -115,16 +133,24 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void LoadContent()
         {
-            _menu.LoadContent();
+            SpriteBatch = new SpriteBatch(GraphicsDevice);
+            
             Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
-
+            Song = Content.Load<Song>(ContentFolderMusic + "piratas-del-caribe");
+            MediaPlayer.IsRepeating = true;
+            // Sunlight
+            BasicShader = Content.Load<Effect>(ContentFolderEffects + "BasicShader");
+            SunLight.LoadContent(BasicShader);
             // Load water
             Water.LoadContent(Content);
             
             // Load ship
             TextureShader = Content.Load<Effect>(ContentFolderEffects + "TextureShader");
-            Ship.LoadContent(Content, TextureShader);
+            Ship.LoadContent(TextureShader);
+            HealthBar.LoadContent(Content);
+            
+            _menu.LoadContent(BasicShader, Ship);
 
             // Load islands
             IslandGenerator.LoadContent(Content, TextureShader);
@@ -135,6 +161,8 @@ namespace TGC.MonoGame.TP
             }
             
             Rain.Load();
+            
+            Options.LoadModifiers();
             base.LoadContent();
         }
 
@@ -145,6 +173,12 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
+            if (MediaPlayer.State == MediaState.Stopped)
+            {
+                MediaPlayer.Volume = 0.01f;
+                MediaPlayer.Play(Song);
+            }
+            
             switch (GameStatus)
             {
                 case GameStatus.MainMenu:
@@ -153,32 +187,47 @@ namespace TGC.MonoGame.TP
                     {
                         GameStatus = GameStatus.Exit;
                     }
+
                     break;
-                case GameStatus.NormalGame:
+                case GameStatus.NormalGame: case GameStatus.GodModeGame:
                     if (Keyboard.GetState().IsKeyDown(Keys.Escape))
                     {
                         GameStatus = GameStatus.MainMenu;
                         _timeSinceLastScreenChange = 0;
                         _justChangedScreens = true;
                     }
-                    Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
-                    Ship.Update(gameTime, FollowCamera);
-                    foreach (var collider in _colliders)
-                    {
-                        Ship.CheckCollision(collider);
-                    }
+                    GameUpdates(gameTime);
                     break;
                 case GameStatus.Exit:
                     Exit();
                     break;
             }
-
-            _timeSinceLastScreenChange += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-            if (_justChangedScreens && _timeSinceLastScreenChange > 2f)
+            
+                _timeSinceLastScreenChange += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
+            if (_justChangedScreens && _timeSinceLastScreenChange > .5f)
             {
                 _justChangedScreens = false;
             }
             base.Update(gameTime);
+        }
+
+        private void GameUpdates(GameTime gameTime)
+        {
+            Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
+
+            ShipPosition = Ship.Update(gameTime, FollowCamera);
+            foreach (var collider in _colliders)
+            {
+                Ship.CheckCollision(collider, HealthBar);
+            }
+            SunLight.Update(TotalTime);
+        }
+
+        public void DrawSampleExplorer(GameTime gameTime)
+        {
+            ImGuiRenderer.BeforeLayout(gameTime);
+            Options.DrawLayout();
+            ImGuiRenderer.AfterLayout();
         }
 
         /// <summary>
@@ -192,28 +241,32 @@ namespace TGC.MonoGame.TP
             switch (GameStatus)
             {
                 case GameStatus.MainMenu:
-                    GraphicsDevice.Clear(Color.Khaki);
                     _menu.Draw(gameTime);
                     break;
-                
+                case GameStatus.GodModeGame:
+                    GameDraw();
+                    DrawSampleExplorer(gameTime);
+                    break;
                 case GameStatus.NormalGame:
-                    
-                    GraphicsDevice.Clear(GlobalConfig.SkyColor);
-                    Rain.Draw(gameTime, FollowCamera);
-                    Water.Draw(FollowCamera.View, FollowCamera.Projection, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
-
-                    foreach (var island in Islands)
-                    {
-                        GraphicsDevice.BlendState = BlendState.Opaque;
-                        island.Draw(FollowCamera.View, FollowCamera.Projection);
-                    }
-
-                    Ship.Draw(FollowCamera, SpriteBatch, Font);
-                    Gizmos.Draw();
+                    GameDraw();
                     break;
             }
+        }
 
-
+        private void GameDraw()
+        {
+            GraphicsDevice.Clear(GlobalConfig.SkyColor);
+            Rain.Draw(TotalTime, FollowCamera);
+            Water.Draw(SunLight.Light.Position, FollowCamera, TotalTime);
+            SunLight.Draw(FollowCamera, BasicShader);
+            foreach (var island in Islands)
+            {
+                GraphicsDevice.BlendState = BlendState.Opaque;
+                island.Draw(FollowCamera.View, FollowCamera.Projection);
+            }
+            Ship.Draw(FollowCamera, SpriteBatch, GraphicsDevice.Viewport.Height);
+            HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
+            Gizmos.Draw();
         }
 
         /// <summary>

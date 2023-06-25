@@ -34,9 +34,18 @@ public class GlobalConfigurationSingleton
 
     // Player Ship config
     public float PlayerScale => .00025f;
-    public float[] PlayerVelocities { get; } = {-20, 0, 10, 20, 30, 40};  // Lista de 5 cambios de velocidad
+    public float[] PlayerVelocities { get; } = {-8, 0, 2, 4, 6, 8};  // Lista de 5 cambios de velocidad
     public float PlayerSecsBetweenChanges = .5f;  // Tiempo de bloqueo entre cambios del barco
     public float PlayerMaxRotationVelocity = 1;
     public float PlayerAcceleration = 2;
-    
+
+    // Water Config
+    public Color WaterAmbientColor { get; set; } = new (124, 208, 255);
+    public Color WaterDiffuseColor { get; set; } = new (7, 125, 244);
+    public Color WaterSpecularColor { get; set; } = new (255, 255, 255);
+    public float WaterKAmbient { get; set; } = 0.59f;
+    public float WaterKDiffuse { get; set; } = 0.53f;
+    public float WaterKSpecular { get; set; } = 0.27f;
+    public float WaterShininess { get; set; } = 6.67f;
+    public Color WaterColor { get; set; } = new (57, 180, 211);
 }

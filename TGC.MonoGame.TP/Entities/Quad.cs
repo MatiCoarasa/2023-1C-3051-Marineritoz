@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics; 
+using Microsoft.Xna.Framework.Graphics;
+using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP.Entities
 {
@@ -12,6 +12,7 @@ namespace TGC.MonoGame.TP.Entities
         private Texture2D Texture { get; set; }
         private IndexBuffer Indices { get; set; }
         private Effect Effect { get; set; }
+        private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
 
         public Quad(GraphicsDevice graphicsDevice, int rows)
         {
@@ -30,7 +31,7 @@ namespace TGC.MonoGame.TP.Entities
             float subdivisionPosition = 2f / rows;
             // Si queremos que todo el quad tenga la misma textura
             // float subdivisionTexture = 1f / rows;
-            List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
+            List<VertexPositionColorNormal> vertices = new List<VertexPositionColorNormal>();
 
             /*
              * IMPORTANTE:
@@ -41,22 +42,21 @@ namespace TGC.MonoGame.TP.Entities
             {
                 for (float j = 0; j <= rows; j++)
                 {
-                    vertices.Add(new (
+                    vertices.Add(new VertexPositionColorNormal(
                         new Vector3(Convert.ToSingle(i * subdivisionPosition - 1), 0, Convert.ToSingle(j * subdivisionPosition - 1)),
-                        Vector3.UnitY,
-                        // new Vector2(Convert.ToSingle(subdivisionTexture * i), Convert.ToSingle(subdivisionTexture * j)))
-                        new Vector2(Convert.ToSingle(i % 2 == 0 ? 0 : 1), Convert.ToSingle(j % 2 == 0 ? 0 : 1)))
+                        Color.Aqua,
+                        Vector3.UnitY)
                     );
                 }
             }
-            Vertices = new VertexBuffer(graphicsDevice, VertexPositionNormalTexture.VertexDeclaration, vertices.Count,
+            Vertices = new VertexBuffer(graphicsDevice, VertexPositionColorNormal.VertexDeclaration, vertices.Count,
                 BufferUsage.None);
             Vertices.SetData(vertices.ToArray());
         }
 
         private void CreateIndexBuffer(GraphicsDevice graphicsDevice, int rows)
         {
-            List<ushort> indices = new List<ushort>();
+            List<int> indices = new List<int>();
 
             /*
              * 0 ---- 1  0 = left upper vertex
@@ -64,16 +64,16 @@ namespace TGC.MonoGame.TP.Entities
              * | /    |  2 = left bottom vertex
              * 2 ---- 3  3 = right bottom vertex
             */
-            for (ushort i = 0; i <= rows - 1; i++)
+            for (int i = 0; i <= rows - 1; i++)
             {
-                for (ushort j = 0; j <= rows - 1; j++)
+                for (int j = 0; j <= rows - 1; j++)
                 {
                     // Es el salto en cantidad que hace el primer vertice de una row a otra row
                     var jump = rows + 1;
-                    var leftUpperVertex = (ushort) (j + jump * i);
-                    var rightUpperVertex = (ushort) (j + jump * i + 1);
-                    var leftBottomVertex = (ushort) (jump * (i + 1) + j);
-                    var rightBottomVertex = (ushort) (jump * (i + 1) + j + 1);
+                    var leftUpperVertex = (int) (j + jump * i);
+                    var rightUpperVertex = (int) (j + jump * i + 1);
+                    var leftBottomVertex = (int) (jump * (i + 1) + j);
+                    var rightBottomVertex = (int) (jump * (i + 1) + j + 1);
                     // Triangulo superior
                     indices.Add(leftUpperVertex);
                     indices.Add(rightUpperVertex);
@@ -84,7 +84,7 @@ namespace TGC.MonoGame.TP.Entities
                     indices.Add(leftBottomVertex);
                 }
             }
-            Indices = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, indices.Count,
+            Indices = new IndexBuffer(graphicsDevice, IndexElementSize.ThirtyTwoBits, indices.Count,
                 BufferUsage.None);
             Indices.SetData(indices.ToArray());
         }
@@ -96,12 +96,21 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="view">The view matrix, normally from the camera.</param>
         /// <param name="projection">The projection matrix, normally from the application.</param>
         /// <param name="time">Time in second since the game started</param>
-        public void Draw(Matrix world, Matrix view, Matrix projection, float time)
+        public void Draw(Vector3 lightPosition, Camera camera, Matrix world, float time)
         {
+            Effect.Parameters["lightPosition"].SetValue(lightPosition);
+            Effect.Parameters["eyePosition"].SetValue(camera.Position);
+            Effect.Parameters["ambientColor"].SetValue(GlobalConfig.WaterAmbientColor.ToVector3());
+            Effect.Parameters["diffuseColor"].SetValue(GlobalConfig.WaterDiffuseColor.ToVector3());
+            Effect.Parameters["specularColor"].SetValue(GlobalConfig.WaterSpecularColor.ToVector3());
+            Effect.Parameters["KAmbient"].SetValue(GlobalConfig.WaterKAmbient);
+            Effect.Parameters["KDiffuse"].SetValue(GlobalConfig.WaterKDiffuse);
+            Effect.Parameters["KSpecular"].SetValue(GlobalConfig.WaterKSpecular);
+            Effect.Parameters["shininess"].SetValue(GlobalConfig.WaterShininess);
+            Effect.Parameters["DiffuseColor"].SetValue(GlobalConfig.WaterColor.ToVector3());
             Effect.Parameters["World"].SetValue(world);
-            Effect.Parameters["View"].SetValue(view);
-            Effect.Parameters["Projection"].SetValue(projection);
-            Effect.Parameters["ModelTexture"].SetValue(Texture);
+            Effect.Parameters["View"].SetValue(camera.View);
+            Effect.Parameters["Projection"].SetValue(camera.Projection);
             Effect.Parameters["Time"].SetValue(time);
             Draw(Effect);
         }
@@ -119,7 +128,6 @@ namespace TGC.MonoGame.TP.Entities
             // Set our vertex declaration, vertex buffer, and index buffer.
             graphicsDevice.SetVertexBuffer(Vertices);
             graphicsDevice.Indices = Indices;
-
             foreach (var effectPass in effect.CurrentTechnique.Passes)
             {
                 effectPass.Apply();

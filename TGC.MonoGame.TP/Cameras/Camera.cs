@@ -8,6 +8,7 @@ namespace TGC.MonoGame.TP.Cameras
         public Matrix Projection { get; set; }
         public Matrix View { get; set; }
 
+        public Vector3 FrontDirection { get; set; }
         public Vector3 RightDirection { get; set; }
         public Vector3 UpDirection { get; set; }
 

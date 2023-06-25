@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using TGC.MonoGame.TP.Cameras;
+using TGC.MonoGame.TP.DataClass;
+using TGC.MonoGame.TP.Utils;
 
 namespace TGC.MonoGame.TP.Entities;
 
@@ -13,6 +15,7 @@ public class ShipPlayer
     private const string ContentFolder3D = "Models/";
     private TGCGame Game { get; }
     private Model Model { get; set; }
+    private WaterPosition WaterPosition { get; set; }
     private Effect Effect { get; set; }
     private Matrix World { get; set; }
 
@@ -22,8 +25,6 @@ public class ShipPlayer
 
     private Vector3 Position { get; set; }
 
-    // Cambios del barco
-    // -1, 0, 1, 2, 3, 4 
     private float CurrentVelocity { get; set; }
     private int CurrentVelocityIndex { get; set; } = 1;
     private float LastVelocityChangeTimer { get; set; }
@@ -34,21 +35,32 @@ public class ShipPlayer
     private OrientedBoundingBox ShipBoundingBox { get; set; }
     private bool HasCollisioned { get; set; }
     private bool IsReactingToCollision { get; set; }
+    private float LastCollisionTimer { get; set; } = 0;
+
+    private bool _reactToKeyboard;
+    
+    private GearBox GearBox { get; set; }
+
+    Arsenal Arsenal { get; set; }
 
     // Uso el constructor como el Initialize
-    public ShipPlayer(TGCGame game)
+    public ShipPlayer(TGCGame game, bool reactToKeyboard)
     {
         World = Matrix.Identity;
         Position = Vector3.Zero;
         Rotation = 0f;
         Game = game;
+        _reactToKeyboard = reactToKeyboard; 
+        WaterPosition = new WaterPosition();
+        GearBox = new GearBox();
+        Arsenal = new Arsenal(game, 15, World.Translation);
     }
 
-    public void LoadContent(ContentManager content, Effect effect)
+    public void LoadContent(Effect effect)
     {
         Effect = effect;
-        Model = content.Load<Model>(ContentFolder3D + "ShipA/Ship");
-        
+        Model = Game.Content.Load<Model>(ContentFolder3D + "ShipA/Ship");
+        Arsenal.LoadContent();
         // Set Ship oriented bounding box
         var tempAABB = BoundingVolumesExtensions.CreateAABBFrom(Model);
         tempAABB = BoundingVolumesExtensions.Scale(tempAABB, GlobalConfig.PlayerScale);
@@ -56,34 +68,51 @@ public class ShipPlayer
         ShipBoundingBox.Center = Position;
         ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
         
+        GearBox.LoadContent(Game.GraphicsDevice, Game.Content);
+        Arsenal.LoadContent(Game.Content, Effect);
+
         foreach (var mesh in Model.Meshes)
         {
             foreach (var meshPart in mesh.MeshParts)
             {
+                
                 ColorTextures.Add(((BasicEffect)meshPart.Effect).Texture);
                 meshPart.Effect = Effect;
             }
         }
     }
     
-    public void Update(GameTime gameTime, Camera followCamera)
+    public Vector3 Update(GameTime gameTime, Camera followCamera)
     {
         var deltaTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
+        var totalTime = Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds);
+        
         LastVelocityChangeTimer += deltaTime;
-
+        LastCollisionTimer += deltaTime;
 
         // Capturar Input teclado
-        var keyboardState = Keyboard.GetState();
-        
-        var deltaRotation = ResolveShipRotation(deltaTime, keyboardState);
-        ShipBoundingBox.Rotate(Matrix.CreateRotationY(deltaRotation));
+        if (_reactToKeyboard)
+        {
+            var keyboardState = Keyboard.GetState();
 
-        var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
-        ShipBoundingBox.Center += deltaPosition;
+            var deltaRotation = ResolveShipRotation(deltaTime, keyboardState);
+            ShipBoundingBox.Rotate(Matrix.CreateRotationY(deltaRotation));
+
+            var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
+            ShipBoundingBox.Center += deltaPosition;
+        }
+
+        WaterPosition = Position.GetPositionInWave(totalTime);
+        World = OBBWorld = Matrix.CreateScale(GlobalConfig.PlayerScale)
+                           * Matrix.CreateRotationY(Rotation)
+                           * Matrix.CreateWorld(Vector3.Zero, - WaterPosition.binormal, WaterPosition.normal)
+                           * Matrix.CreateTranslation(WaterPosition.position);
+
             
-        World = OBBWorld = Matrix.CreateScale(GlobalConfig.PlayerScale) * Matrix.CreateRotationY(Rotation) * Matrix.CreateTranslation(Position);
+        Arsenal.Update(deltaTime, Position, followCamera);
 
         followCamera.Update(gameTime, World, Game.IsActive);
+        return World.Translation;
     }
     
     private Vector3 ResolveShipMovement(float deltaTime, KeyboardState keyboardState)
@@ -120,7 +149,8 @@ public class ShipPlayer
 
 
         var prePositionChange = Position;
-        Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * CurrentVelocity;
+        var waterVelocityDisplacement = Math.Min(WaterPosition.tangent.Z * 2 * CurrentVelocity, 0);
+        Position += Matrix.CreateRotationY(Rotation).Right * deltaTime * (CurrentVelocity - waterVelocityDisplacement);
         var deltaPosition = Position - prePositionChange;
 
         if (LastVelocityChangeTimer < GlobalConfig.PlayerSecsBetweenChanges) return deltaPosition;
@@ -131,14 +161,17 @@ public class ShipPlayer
             
             // No permito que 'CurrentVelocityIndex' supere el indice de velocidad maxima (Velocities.Length - 1)
             CurrentVelocityIndex = Math.Min(CurrentVelocityIndex + 1, GlobalConfig.PlayerVelocities.Length - 1);
+            GearBox.currentGearBoxOption = CurrentVelocityIndex;
         } else if (keyboardState.IsKeyDown(Keys.S))
         {
             LastVelocityChangeTimer = 0f;
             
             // No permito que el Index se vaya por abajo de 0
             CurrentVelocityIndex = Math.Max(CurrentVelocityIndex - 1, 0);
+            GearBox.currentGearBoxOption = CurrentVelocityIndex;
         }
 
+        GearBox.currentVelocity = CurrentVelocity;
         return deltaPosition;
     }
         
@@ -162,19 +195,14 @@ public class ShipPlayer
         return Rotation - preRotation;
     }
 
-    public void Draw(Camera followCamera, SpriteBatch spriteBatch, SpriteFont spriteFont)
+    public void Draw(Camera followCamera, SpriteBatch spriteBatch, float height)
     {
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
-        
-        spriteBatch.Begin();
-        spriteBatch.DrawString(spriteFont, "Speed: " + CurrentVelocity.ToString("0.0"), new Vector2(0, 20), Color.White);
-        spriteBatch.DrawString(spriteFont, "Shift: " + (CurrentVelocityIndex - 1).ToString("D") + "/" + (GlobalConfig.PlayerVelocities.Length - 2),
-            new Vector2(0, 0), Color.White);
-        spriteBatch.End();
 
         var index = 0;
         Game.GraphicsDevice.BlendState = BlendState.Opaque;
+
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
@@ -193,16 +221,32 @@ public class ShipPlayer
                 index++;
             }
         }
+        GearBox.Draw(spriteBatch, height);
+
+        Arsenal.Draw(followCamera);
+
+        Game.Gizmos.DrawCube(OBBWorld * 2, Color.Red);
+        
+        Game.Gizmos.DrawLine(World.Translation, WaterPosition.normal + World.Translation, Color.Green);
+        Game.Gizmos.DrawLine(World.Translation, WaterPosition.binormal + World.Translation, Color.Red);
+        Game.Gizmos.DrawLine(World.Translation, WaterPosition.tangent + World.Translation, Color.Violet);
     }
 
-    public void CheckCollision(BoundingBox boundingBox)
+    public void CheckCollision(BoundingBox boundingBox, HealthBar healthBar)
     {
         if (CurrentVelocity == 0f) return;
         
-        if (ShipBoundingBox.Intersects(boundingBox))
+        if (!IsReactingToCollision && ShipBoundingBox.Intersects(boundingBox))
         {
+            if (LastCollisionTimer > 1f)
+            {
+                healthBar.Life -= 15;
+                LastCollisionTimer = 0f;
+            }
             HasCollisioned = true;
         }
+
+        Arsenal.CheckCollision(boundingBox);
     }
     
 }
