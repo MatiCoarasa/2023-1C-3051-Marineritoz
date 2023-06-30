@@ -110,8 +110,8 @@ namespace TGC.MonoGame.TP.Entities
         public void Draw(Vector3 lightPosition, Camera camera, Matrix world, float time, RenderTargetCube renderTargetCube)
         {
             Effect.Parameters["lightPosition"].SetValue(lightPosition);
-            Effect.Parameters["eyePosition"].SetValue(camera.Position);
-            Effect.Parameters["environmentMap"].SetValue(renderTargetCube);
+            Effect.Parameters["eyePosition"]?.SetValue(camera.Position);
+            Effect.Parameters["environmentMap"]?.SetValue(renderTargetCube);
             Effect.Parameters["ambientColor"].SetValue(GlobalConfig.WaterAmbientColor.ToVector3());
             Effect.Parameters["diffuseColor"].SetValue(GlobalConfig.WaterDiffuseColor.ToVector3());
             Effect.Parameters["specularColor"].SetValue(GlobalConfig.WaterSpecularColor.ToVector3());

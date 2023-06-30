@@ -9,7 +9,7 @@ public static class Options
 {
     private static GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
     private static ModifierController WaterModifier = new ();
-
+    private static ModifierController ShipModifier = new();
     public static void LoadModifiers()
     {
         WaterModifier.AddColor("Ambient Color", delegate(Color color)
@@ -44,6 +44,14 @@ public static class Options
         {
             GlobalConfig.WaterShininess = value;
         }, GlobalConfig.WaterShininess, 1f, 64f);
+        ShipModifier.AddVector("Translation In Environment", delegate(Vector3 value)
+        {
+            GlobalConfig.PlayerTranslationInEnvironment = value;
+        }, GlobalConfig.PlayerTranslationInEnvironment);
+        ShipModifier.AddFloat("Scale In Environment", delegate(float value)
+        {
+            GlobalConfig.PlayerScaleInEnvironment = value;
+        }, GlobalConfig.PlayerScaleInEnvironment);
     }
 
     public static void DrawLayout()
@@ -57,6 +65,11 @@ public static class Options
         if (ImGui.CollapsingHeader("Water"))
         {
             WaterModifier.Draw();
+            ImGui.EndMenu();
+        }
+        if (ImGui.CollapsingHeader("Ship"))
+        {
+            ShipModifier.Draw();
             ImGui.EndMenu();
         }
 

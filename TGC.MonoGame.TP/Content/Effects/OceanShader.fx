@@ -107,9 +107,11 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 	float4 wave1 = Wave(float2(1,1),0.1, 20);
 	float4 wave2 = Wave(float2(1,0.6),0.1,10);
 	float4 wave3 = Wave(float2(1,1.3),0.1,5);
+    float4 wave4 = Wave(float2(1,1.3),0.01,1);
     worldPosition.xyz += GerstnerWave(wave1, anchorPoint, tangent, binormal);
     worldPosition.xyz += GerstnerWave(wave2, anchorPoint, tangent, binormal);
     worldPosition.xyz += GerstnerWave(wave3, anchorPoint, tangent, binormal);
+    worldPosition.xyz += GerstnerWave(wave4, anchorPoint, tangent, binormal);
     float3 normal = normalize(cross(binormal, tangent));
     
     // Final World Position of Wave
@@ -198,8 +200,7 @@ float4 EnvironmentMapPS(VertexShaderOutput input) : COLOR
 	float3 reflection = reflect(view, normal);
 	float3 reflectionColor = texCUBE(environmentMapSampler, reflection).rgb;
 
-    float fresnel = saturate((1.0 - dot(normal, view)));
-    return float4(lerp(DiffuseColor, reflectionColor, fresnel), 1);
+    return float4(normal, 1);
 }
 
 technique OceanDrawing

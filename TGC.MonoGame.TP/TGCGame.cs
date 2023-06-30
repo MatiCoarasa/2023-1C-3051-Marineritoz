@@ -6,7 +6,6 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
-using TGC.MonoGame.Samples.Cameras;
 using TGC.MonoGame.TP.Content.Gizmos;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Entities;
@@ -32,12 +31,16 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderSpriteFonts = "Fonts/";
         public const string ContentFolderTextures = "Textures/";
         private Camera FollowCamera { get; set; }
+        private Camera ShipCamera { get; set; }
         private ShipPlayer Ship { get; set; }
         private Vector3 ShipPosition { get; set; }
         private Effect TextureShader { get; set; }
         private Effect BasicShader { get; set; }
         public Gizmos Gizmos { get; }
         private const bool GizmosEnabled = false;
+
+        private bool _justChangedScreens;
+        private float _timeSinceLastScreenChange;
         
         private Island[] Islands { get; set; }
         private IslandGenerator IslandGenerator { get; set; }
@@ -55,7 +58,7 @@ namespace TGC.MonoGame.TP
         private GlobalConfigurationSingleton GlobalConfig { get; }
         private MainMenu _menu;
 
-        public GameStatus GameStatus = GameStatus.NormalGame;
+        public GameStatus GameStatus = GameStatus.MainMenu;
         
         private HealthBar HealthBar { get; set; }
         private ImGuiRenderer ImGuiRenderer { get; set; }
@@ -99,7 +102,8 @@ namespace TGC.MonoGame.TP
         {
             var rasterizerState = new RasterizerState();
             GraphicsDevice.RasterizerState = rasterizerState;
-            FollowCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
+            ShipCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
+            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
             CubeMapCamera = new StaticCamera(ShipPosition, Vector3.UnitX, Vector3.Up);
             
             ImGuiRenderer = new ImGuiRenderer(this);
@@ -109,8 +113,7 @@ namespace TGC.MonoGame.TP
 
             _menu = new MainMenu(this);
 
-            FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
-            Ship = new ShipPlayer(this);
+            Ship = new ShipPlayer(this, true);
             IslandGenerator = new IslandGenerator(this);
             TotalTime = 0;
 
@@ -141,8 +144,7 @@ namespace TGC.MonoGame.TP
             SpriteBatch = new SpriteBatch(GraphicsDevice);
             EnvironmentMapRenderTarget = new RenderTargetCube(GraphicsDevice, EnvironmentmapSize, false,
                 SurfaceFormat.Color, DepthFormat.Depth24, 0, RenderTargetUsage.DiscardContents);
-            _menu.LoadContent();
-            Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Arial16");
+            Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Verdana16");
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
             Song = Content.Load<Song>(ContentFolderMusic + "piratas-del-caribe");
             MediaPlayer.IsRepeating = true;
@@ -151,11 +153,11 @@ namespace TGC.MonoGame.TP
             SunLight.LoadContent(BasicShader);
             // Load water
             Water.LoadContent(Content);
-            
             // Load ship
             var shipShader = Content.Load<Effect>(ContentFolderEffects + "ShipShader");
-            Ship.LoadContent(GraphicsDevice, Content, shipShader);
+            Ship.LoadContent(shipShader);
             HealthBar.LoadContent(Content);
+            _menu.LoadContent(BasicShader, Ship);
             // Load islands
             TextureShader = Content.Load<Effect>(ContentFolderEffects + "TextureShader");
             IslandGenerator.LoadContent(Content, TextureShader);
@@ -178,49 +180,52 @@ namespace TGC.MonoGame.TP
         /// </summary>
         protected override void Update(GameTime gameTime)
         {
-            TotalTime += (float) gameTime.ElapsedGameTime.TotalSeconds;
+            var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            TotalTime += deltaTime;
             if (MediaPlayer.State == MediaState.Stopped)
             {
                 MediaPlayer.Volume = 0.01f;
                 MediaPlayer.Play(Song);
             }
-
-            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+            switch (GameStatus)
             {
-                GameStatus = GameStatus.Exit;
-            }
-
-            if (Keyboard.GetState().IsKeyDown(Keys.G))
-            {
-                GameStatus = GameStatus.GodModeGame;
-            }
-            
-            
-            if (Keyboard.GetState().IsKeyDown(Keys.M))
-            {
-                GameStatus = GameStatus.NormalGame;
-            }
-
-            switch (GameStatus) {
-                case GameStatus.GodModeGame:
+                case GameStatus.MainMenu:
+                    _menu.Update(TotalTime, deltaTime);
+                    if (Keyboard.GetState().IsKeyDown(Keys.Escape) && !_justChangedScreens)
+                    {
+                        GameStatus = GameStatus.Exit;
+                    }
+                    break;
                 case GameStatus.NormalGame:
-                    GameUpdates(gameTime);
+                case GameStatus.GodModeGame:
+                    if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+                    {
+                        GameStatus = GameStatus.MainMenu;
+                        _timeSinceLastScreenChange = 0;
+                        _justChangedScreens = true;
+                    }
+                    GameUpdates(gameTime, GameStatus == GameStatus.NormalGame ? ShipCamera : FollowCamera);
                     break;
                 case GameStatus.Exit:
                     Exit();
                     break;
             }
             
+                _timeSinceLastScreenChange += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
+            if (_justChangedScreens && _timeSinceLastScreenChange > .5f)
+            {
+                _justChangedScreens = false;
+            }
             base.Update(gameTime);
         }
 
-        private void GameUpdates(GameTime gameTime)
+        private void GameUpdates(GameTime gameTime, Camera camera)
         {
             var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            Gizmos.UpdateViewProjection(FollowCamera.View, FollowCamera.Projection);
+            Gizmos.UpdateViewProjection(camera.View, camera.Projection);
 
-            ShipPosition = Ship.Update(TotalTime, deltaTime, FollowCamera);
-            CubeMapCamera.Update(deltaTime, Ship.World);
+            ShipPosition = Ship.Update(TotalTime, deltaTime, camera);
+            CubeMapCamera.Update(deltaTime, Ship.World, true);
             foreach (var collider in _colliders)
             {
                 Ship.CheckCollision(collider, HealthBar);
@@ -250,7 +255,7 @@ namespace TGC.MonoGame.TP
                 CubeMapCamera.BuildView();
                 // Water.SetOceanDrawing();
                 // Water.Draw(SunLight.Light.Position, CubeMapCamera, TotalTime, EnvironmentMapRenderTarget);
-                Ship.Draw(CubeMapCamera, SpriteBatch, GraphicsDevice.Viewport.Height, false);
+                Ship.Draw(CubeMapCamera, SpriteBatch, GraphicsDevice.Viewport.Height, true);
             }
 
             #endregion
@@ -271,8 +276,7 @@ namespace TGC.MonoGame.TP
             switch (GameStatus)
             {
                 case GameStatus.MainMenu:
-                    GraphicsDevice.Clear(Color.Khaki);
-                    _menu.Draw(gameTime);
+                    _menu.Draw(TotalTime, EnvironmentMapRenderTarget);
                     break;
                 case GameStatus.GodModeGame:
                     DrawEnvironment();
@@ -283,7 +287,7 @@ namespace TGC.MonoGame.TP
                 case GameStatus.NormalGame:
                     DrawEnvironment();
                     Water.SetEnvironmentMappingDrawing();
-                    GameDraw(FollowCamera);
+                    GameDraw(ShipCamera);
                     break;
             }
         }

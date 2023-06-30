@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -8,33 +9,58 @@ namespace TGC.MonoGame.TP.Menu;
 
 public class ButtonsGrid
 {
-    private const int VerticalSpacing = 10;
-    private Rectangle _gridSpace;
-    private List<Button> _buttons;
+    private const int VerticalSpacing = 80;
 
-    public ButtonsGrid(Point start, Point size, List<Button> buttons)
+    private TGCGame _game;
+    private int _x;
+    private int _startY;
+    private List<Button> _buttons;
+    private List<Rectangle> _buttonsRectangles;
+
+    public ButtonsGrid(TGCGame game, int x, int startY, List<Button> buttons)
     {
-        _gridSpace = new Rectangle(start, size);
+        _game = game;
+        _x = x;
+        _startY = startY;
         _buttons = buttons;
+        _buttonsRectangles = new List<Rectangle>();
     }
 
     public void LoadContent(ContentManager contentManager)
     {
-        foreach (var button in _buttons) button.LoadContent(contentManager);
+        for (var buttonIndex = 0; buttonIndex < _buttons.Count; buttonIndex++)
+        {
+            var button = _buttons[buttonIndex];
+            
+            button.LoadContent(contentManager);
+            
+            var buttonY = _startY + buttonIndex * VerticalSpacing;
+
+            var buttonRectangle = button.SetDrawPosition(_x, buttonY);
+            _buttonsRectangles.Add(buttonRectangle);
+        }
+    }
+
+    public void Update(MouseState mouseState)
+    {
+        for (var index = 0; index < _buttons.Count; index++)
+        {
+            var button = _buttons[index];
+            var buttonRectangle = _buttonsRectangles[index];
+
+            var mousePosition = new Point(mouseState.X, mouseState.Y);
+            button.IsHovered = buttonRectangle.Contains(mousePosition);
+            
+            if (button.IsHovered && mouseState.LeftButton == ButtonState.Pressed) button.Select(_game); 
+        }
     }
 
     public void Draw(SpriteBatch spriteBatch)
     {
-        var buttonRows = _buttons.Count;
-        
-        var cellHeight = (_gridSpace.Height - VerticalSpacing * (buttonRows - 1)) / buttonRows;
-        for (var buttonIndex = 0; buttonIndex < _buttons.Count; buttonIndex++)
+        for (var index = 0; index < _buttons.Count; index++)
         {
-            var button = _buttons[buttonIndex];
-            var buttonX = _gridSpace.Center.X;
-            var buttonY = _gridSpace.Top + (buttonIndex * (cellHeight + VerticalSpacing));
-
-            button.Draw(buttonX, buttonY, false, spriteBatch);
+            var button = _buttons[index];
+            button.Draw(spriteBatch);
         }
     }
 

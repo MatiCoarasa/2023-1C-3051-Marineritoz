@@ -36,27 +36,30 @@ public class ShipPlayer
     private bool HasCollisioned { get; set; }
     private bool IsReactingToCollision { get; set; }
     private float LastCollisionTimer { get; set; } = 0;
+
+    private bool _reactToKeyboard;
     
     private GearBox GearBox { get; set; }
 
     Arsenal Arsenal { get; set; }
 
     // Uso el constructor como el Initialize
-    public ShipPlayer(TGCGame game)
+    public ShipPlayer(TGCGame game, bool reactToKeyboard)
     {
         World = Matrix.Identity;
         Position = Vector3.Zero;
         Rotation = 0f;
         Game = game;
+        _reactToKeyboard = reactToKeyboard; 
         WaterPosition = new WaterPosition();
         GearBox = new GearBox();
         Arsenal = new Arsenal(game, 15, World.Translation);
     }
 
-    public void LoadContent(GraphicsDevice graphicsDevice, ContentManager content, Effect effect)
+    public void LoadContent(Effect effect)
     {
         Effect = effect;
-        Model = content.Load<Model>(ContentFolder3D + "ShipA/Ship");
+        Model = Game.Content.Load<Model>(ContentFolder3D + "ShipA/Ship");
         Arsenal.LoadContent();
         // Set Ship oriented bounding box
         var tempAABB = BoundingVolumesExtensions.CreateAABBFrom(Model);
@@ -65,13 +68,14 @@ public class ShipPlayer
         ShipBoundingBox.Center = Position;
         ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
         
-        GearBox.LoadContent(graphicsDevice, content);
-        Arsenal.LoadContent(content, Effect);
+        GearBox.LoadContent(Game.GraphicsDevice, Game.Content);
+        Arsenal.LoadContent(Game.Content, Effect);
 
         foreach (var mesh in Model.Meshes)
         {
             foreach (var meshPart in mesh.MeshParts)
             {
+                
                 ColorTextures.Add(((BasicEffect)meshPart.Effect).Texture);
                 meshPart.Effect = Effect;
             }
@@ -84,13 +88,17 @@ public class ShipPlayer
         LastCollisionTimer += deltaTime;
 
         // Capturar Input teclado
-        var keyboardState = Keyboard.GetState();
-        
-        var deltaRotation = ResolveShipRotation(deltaTime, keyboardState);
-        ShipBoundingBox.Rotate(Matrix.CreateRotationY(deltaRotation));
+        if (_reactToKeyboard)
+        {
+            var keyboardState = Keyboard.GetState();
 
-        var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
-        ShipBoundingBox.Center += deltaPosition;
+            var deltaRotation = ResolveShipRotation(deltaTime, keyboardState);
+            ShipBoundingBox.Rotate(Matrix.CreateRotationY(deltaRotation));
+
+            var deltaPosition = ResolveShipMovement(deltaTime, keyboardState);
+            ShipBoundingBox.Center += deltaPosition;
+        }
+
         WaterPosition = Position.GetPositionInWave(totalTime);
         World = OBBWorld = Matrix.CreateScale(GlobalConfig.PlayerScale)
                            * Matrix.CreateRotationY(Rotation)
@@ -100,7 +108,7 @@ public class ShipPlayer
             
         Arsenal.Update(deltaTime, Position, followCamera);
 
-        followCamera.Update(deltaTime, World);
+        followCamera.Update(deltaTime, World, Game.IsActive);
         return World.Translation;
     }
     
@@ -196,7 +204,7 @@ public class ShipPlayer
         {
             var world = isNormalCamera
                 ? World
-                : Matrix.CreateScale(0.2f) * Matrix.CreateRotationX((float)Math.PI) * World * Matrix.CreateTranslation(0, 1.2f, 0);
+                : Matrix.CreateScale(GlobalConfig.PlayerScaleInEnvironment) * Matrix.CreateRotationX((float)Math.PI) * World * Matrix.CreateTranslation(GlobalConfig.PlayerTranslationInEnvironment);
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * world);
             foreach (var meshPart in mesh.MeshParts)
             {

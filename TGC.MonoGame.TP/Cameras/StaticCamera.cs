@@ -1,8 +1,8 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using TGC.MonoGame.TP.Cameras;
 
-namespace TGC.MonoGame.Samples.Cameras
+namespace TGC.MonoGame.TP.Cameras
 {
     /// <summary>
     ///     Static camera without restrictions, where each component is configured and nothing is inferred.
@@ -76,9 +76,9 @@ namespace TGC.MonoGame.Samples.Cameras
             }
         }
 
-        public override void Update(float elapsedTime, Matrix followedWorld)
+        public override void Update(float elapsedTime, Matrix followedWorld, bool isGameActive)
         {
-            Position = followedWorld.Translation;
+            Position = followedWorld.Translation + new Vector3(0, -1, 0);
         }
     }
 }

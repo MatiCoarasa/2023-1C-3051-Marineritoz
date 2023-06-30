@@ -38,6 +38,8 @@ public class GlobalConfigurationSingleton
     public float PlayerSecsBetweenChanges = .5f;  // Tiempo de bloqueo entre cambios del barco
     public float PlayerMaxRotationVelocity = 1;
     public float PlayerAcceleration = 2;
+    public float PlayerScaleInEnvironment { get; set; } = 0.2f;
+    public Vector3 PlayerTranslationInEnvironment { get; set; } = new Vector3(0, 1.8f, 0);
 
     // Water Config
     public Color WaterAmbientColor { get; set; } = new (124, 208, 255);
