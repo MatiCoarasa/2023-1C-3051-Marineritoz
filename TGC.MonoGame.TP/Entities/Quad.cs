@@ -30,7 +30,7 @@ namespace TGC.MonoGame.TP.Entities
         {
             float subdivisionPosition = 2f / rows;
             // Si queremos que todo el quad tenga la misma textura
-            // float subdivisionTexture = 1f / rows;
+            float subdivisionTexture = 1f / rows;
             List<VertexPositionNormalTexture> vertices = new List<VertexPositionNormalTexture>();
 
             /*
@@ -45,8 +45,8 @@ namespace TGC.MonoGame.TP.Entities
                     vertices.Add(new VertexPositionNormalTexture(
                         new Vector3(Convert.ToSingle(i * subdivisionPosition - 1), 0, Convert.ToSingle(j * subdivisionPosition - 1)),
                         Vector3.UnitY,
-                        // new Vector2(Convert.ToSingle(subdivisionTexture * i), Convert.ToSingle(subdivisionTexture * j)))
-                        new Vector2(Convert.ToSingle(i % 2 == 0 ? 0 : 1), Convert.ToSingle(j % 2 == 0 ? 0 : 1)))
+                        new Vector2(Convert.ToSingle(subdivisionTexture * j), Convert.ToSingle(subdivisionTexture * i)))
+                        // new Vector2(Convert.ToSingle(i % 2 == 0 ? 0 : 1), Convert.ToSingle(j % 2 == 0 ? 0 : 1)))
                     );
                 }
             }
@@ -107,11 +107,11 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="view">The view matrix, normally from the camera.</param>
         /// <param name="projection">The projection matrix, normally from the application.</param>
         /// <param name="time">Time in second since the game started</param>
-        public void Draw(Vector3 lightPosition, Camera camera, Matrix world, float time, RenderTargetCube renderTargetCube)
+        public void Draw(Vector3 lightPosition, Camera camera, Matrix world, float time, RenderTarget2D renderTargetCube)
         {
             Effect.Parameters["lightPosition"].SetValue(lightPosition);
             Effect.Parameters["eyePosition"]?.SetValue(camera.Position);
-            Effect.Parameters["environmentMap"]?.SetValue(renderTargetCube);
+            Effect.Parameters["planarReflection"]?.SetValue(renderTargetCube);
             Effect.Parameters["ambientColor"].SetValue(GlobalConfig.WaterAmbientColor.ToVector3());
             Effect.Parameters["diffuseColor"].SetValue(GlobalConfig.WaterDiffuseColor.ToVector3());
             Effect.Parameters["specularColor"].SetValue(GlobalConfig.WaterSpecularColor.ToVector3());
@@ -124,6 +124,9 @@ namespace TGC.MonoGame.TP.Entities
             Effect.Parameters["View"].SetValue(camera.View);
             Effect.Parameters["Projection"].SetValue(camera.Projection);
             Effect.Parameters["Time"].SetValue(time);
+            Effect.Parameters["wave1"].SetValue(GlobalConfig.Waves[0]);
+            Effect.Parameters["wave2"]?.SetValue(GlobalConfig.Waves[1]);
+            Effect.Parameters["wave3"]?.SetValue(GlobalConfig.Waves[2]);
             Draw(Effect);
         }
 

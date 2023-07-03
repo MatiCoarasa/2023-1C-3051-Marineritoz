@@ -39,43 +39,6 @@ namespace TGC.MonoGame.TP.Cameras
                 farPlaneDistance);
         }
 
-        public void SetCubemapCameraForOrientation(CubeMapFace face)
-        {
-            switch (face)
-            {
-                default:
-                case CubeMapFace.PositiveX:
-                    FrontDirection = -Vector3.UnitX;
-                    UpDirection = Vector3.Down;
-                    break;
-
-                case CubeMapFace.NegativeX:
-                    FrontDirection = Vector3.UnitX;
-                    UpDirection = Vector3.Down;
-                    break;
-
-                case CubeMapFace.PositiveY:
-                    FrontDirection = Vector3.Down;
-                    UpDirection = Vector3.UnitZ;
-                    break;
-
-                case CubeMapFace.NegativeY:
-                    FrontDirection = Vector3.Up;
-                    UpDirection = -Vector3.UnitZ;
-                    break;
-
-                case CubeMapFace.PositiveZ:
-                    FrontDirection = -Vector3.UnitZ;
-                    UpDirection = Vector3.Down;
-                    break;
-
-                case CubeMapFace.NegativeZ:
-                    FrontDirection = Vector3.UnitZ;
-                    UpDirection = Vector3.Down;
-                    break;
-            }
-        }
-
         public override void Update(float elapsedTime, Matrix followedWorld, bool isGameActive)
         {
             Position = followedWorld.Translation + new Vector3(0, -1, 0);

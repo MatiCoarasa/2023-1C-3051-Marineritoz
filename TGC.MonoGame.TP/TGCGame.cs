@@ -31,6 +31,8 @@ namespace TGC.MonoGame.TP
         public const string ContentFolderSpriteFonts = "Fonts/";
         public const string ContentFolderTextures = "Textures/";
         private Camera FollowCamera { get; set; }
+        private Camera EnvironmentFollowCamera { get; set; }
+        private Camera EnvironmentShipCamera { get; set; }
         private Camera ShipCamera { get; set; }
         private ShipPlayer Ship { get; set; }
         private Vector3 ShipPosition { get; set; }
@@ -64,9 +66,8 @@ namespace TGC.MonoGame.TP
         private ImGuiRenderer ImGuiRenderer { get; set; }
         
         private float TotalTime { get; set; }
-        private RenderTargetCube EnvironmentMapRenderTarget { get; set; }
+        private RenderTarget2D EnvironmentMapRenderTarget { get; set; }
         private const int EnvironmentmapSize = 2048;
-        private StaticCamera CubeMapCamera { get; set; }
 
         /// <summary>
         ///     Constructor del juego.
@@ -104,8 +105,9 @@ namespace TGC.MonoGame.TP
             GraphicsDevice.RasterizerState = rasterizerState;
             ShipCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio);
             FollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio);
-            CubeMapCamera = new StaticCamera(ShipPosition, Vector3.UnitX, Vector3.Up);
-            
+            EnvironmentFollowCamera = new FollowCamera(GraphicsDevice.Viewport.AspectRatio, true);
+            EnvironmentShipCamera = new ShipCamera(GraphicsDevice.Viewport.AspectRatio, true);
+
             ImGuiRenderer = new ImGuiRenderer(this);
             ImGuiRenderer.RebuildFontAtlas();
 
@@ -142,8 +144,7 @@ namespace TGC.MonoGame.TP
         protected override void LoadContent()
         {
             SpriteBatch = new SpriteBatch(GraphicsDevice);
-            EnvironmentMapRenderTarget = new RenderTargetCube(GraphicsDevice, EnvironmentmapSize, false,
-                SurfaceFormat.Color, DepthFormat.Depth24, 0, RenderTargetUsage.DiscardContents);
+            EnvironmentMapRenderTarget = new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, true, SurfaceFormat.Color, DepthFormat.Depth24);
             Font = Content.Load<SpriteFont>(ContentFolderSpriteFonts + "Verdana16");
             Gizmos.LoadContent(GraphicsDevice, new ContentManager(Content.ServiceProvider, "Content"));
             Song = Content.Load<Song>(ContentFolderMusic + "piratas-del-caribe");
@@ -154,12 +155,12 @@ namespace TGC.MonoGame.TP
             // Load water
             Water.LoadContent(Content);
             // Load ship
-            var shipShader = Content.Load<Effect>(ContentFolderEffects + "ShipShader");
-            Ship.LoadContent(shipShader);
-            HealthBar.LoadContent(Content);
-            _menu.LoadContent(BasicShader, Ship);
-            // Load islands
+            // var shipShader = Content.Load<Effect>(ContentFolderEffects + "ShipShader");
             TextureShader = Content.Load<Effect>(ContentFolderEffects + "TextureShader");
+            Ship.LoadContent(TextureShader);
+            HealthBar.LoadContent(Content);
+            _menu.LoadContent(BasicShader, Ship, Font, new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.Depth24));
+            // Load islands
             IslandGenerator.LoadContent(Content, TextureShader);
             Islands = IslandGenerator.CreateRandomIslands(GlobalConfig.IslandsQuantity, GlobalConfig.IslandsMaxXSpawn, GlobalConfig.IslandsMaxZSpawn, GlobalConfig.SpawnBoxSize);
             for (var i = 0; i < Islands.Length; i++)
@@ -189,6 +190,7 @@ namespace TGC.MonoGame.TP
             }
             switch (GameStatus)
             {
+                case GameStatus.DeathMenu:
                 case GameStatus.MainMenu:
                     _menu.Update(TotalTime, deltaTime);
                     if (Keyboard.GetState().IsKeyDown(Keys.Escape) && !_justChangedScreens)
@@ -204,7 +206,7 @@ namespace TGC.MonoGame.TP
                         _timeSinceLastScreenChange = 0;
                         _justChangedScreens = true;
                     }
-                    GameUpdates(gameTime, GameStatus == GameStatus.NormalGame ? ShipCamera : FollowCamera);
+                    GameUpdates(gameTime);
                     break;
                 case GameStatus.Exit:
                     Exit();
@@ -219,16 +221,22 @@ namespace TGC.MonoGame.TP
             base.Update(gameTime);
         }
 
-        private void GameUpdates(GameTime gameTime, Camera camera)
+        private void GameUpdates(GameTime gameTime)
         {
+            var camera = GameStatus == GameStatus.NormalGame ? ShipCamera : FollowCamera;
+            // var environmentCamera = GameStatus == GameStatus.NormalGame ? EnvironmentShipCamera : EnvironmentFollowCamera;
             var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             Gizmos.UpdateViewProjection(camera.View, camera.Projection);
-
-            ShipPosition = Ship.Update(TotalTime, deltaTime, camera);
-            CubeMapCamera.Update(deltaTime, Ship.World, true);
+            ShipPosition = Ship.Update(TotalTime, deltaTime, camera, EnvironmentFollowCamera);
             foreach (var collider in _colliders)
             {
                 Ship.CheckCollision(collider, HealthBar);
+            }
+            if (HealthBar.Life <= 0)
+            {
+                TotalTime = 0;
+                HealthBar.Life = 100;
+                GameStatus = GameStatus.DeathMenu;
             }
             SunLight.Update(TotalTime);
         }
@@ -240,31 +248,14 @@ namespace TGC.MonoGame.TP
             ImGuiRenderer.AfterLayout();
         }
 
-        private void DrawEnvironment()
+        private void DrawEnvironment(Camera camera)
         {
-            #region Pass 1-6
-
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-            for (var face = CubeMapFace.PositiveX; face <= CubeMapFace.NegativeZ; face++)
-            {
-                // Set the render target as our cubemap face, we are drawing the scene in this texture
-                GraphicsDevice.SetRenderTarget(EnvironmentMapRenderTarget, face);
-                GraphicsDevice.Clear(Color.Transparent);
-
-                CubeMapCamera.SetCubemapCameraForOrientation(face);
-                CubeMapCamera.BuildView();
-                // Water.SetOceanDrawing();
-                // Water.Draw(SunLight.Light.Position, CubeMapCamera, TotalTime, EnvironmentMapRenderTarget);
-                Ship.Draw(CubeMapCamera, SpriteBatch, GraphicsDevice.Viewport.Height, true);
-            }
-
-            #endregion
-
-            #region Pass 7
-            // Set the render target as null, we are drawing on the screen!
+            GraphicsDevice.SetRenderTarget(EnvironmentMapRenderTarget);
+            GraphicsDevice.Clear(Color.Transparent);
+            Ship.Draw(camera, SpriteBatch, SunLight.Light.Position, GraphicsDevice.Viewport.Height, false);
             GraphicsDevice.SetRenderTarget(null);
             GraphicsDevice.Clear(GlobalConfig.SkyColor);
-            #endregion
         }
         /// <summary>
         ///     Se llama cada vez que hay que refrescar la pantalla.
@@ -275,17 +266,18 @@ namespace TGC.MonoGame.TP
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             switch (GameStatus)
             {
+                case GameStatus.DeathMenu:
                 case GameStatus.MainMenu:
-                    _menu.Draw(TotalTime, EnvironmentMapRenderTarget);
+                    _menu.Draw(TotalTime, GameStatus);
                     break;
                 case GameStatus.GodModeGame:
-                    DrawEnvironment();
+                    DrawEnvironment(EnvironmentFollowCamera);
                     Water.SetEnvironmentMappingDrawing();
                     GameDraw(FollowCamera);
                     DrawSampleExplorer(gameTime);
                     break;
                 case GameStatus.NormalGame:
-                    DrawEnvironment();
+                    DrawEnvironment(EnvironmentFollowCamera);
                     Water.SetEnvironmentMappingDrawing();
                     GameDraw(ShipCamera);
                     break;
@@ -297,14 +289,14 @@ namespace TGC.MonoGame.TP
             GraphicsDevice.Clear(GlobalConfig.SkyColor);
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             Rain.Draw(TotalTime, camera);
-            Water.Draw(SunLight.Light.Position, camera, TotalTime, EnvironmentMapRenderTarget);
+            Water.Draw(ShipPosition, SunLight.Light.Position, camera, TotalTime, EnvironmentMapRenderTarget);
             SunLight.Draw(camera, BasicShader);
             foreach (var island in Islands)
             {
                 GraphicsDevice.BlendState = BlendState.Opaque;
-                island.Draw(camera.View, camera.Projection);
+                island.Draw(camera, SunLight.Light.Position);
             }
-            Ship.Draw(camera, SpriteBatch, GraphicsDevice.Viewport.Height, true);
+            Ship.Draw(camera, SpriteBatch, SunLight.Light.Position, GraphicsDevice.Viewport.Height, true);
             HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
             Gizmos.Draw();
         }

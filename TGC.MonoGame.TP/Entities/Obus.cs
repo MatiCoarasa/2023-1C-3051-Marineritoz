@@ -4,8 +4,10 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using TGC.MonoGame.TP.Cameras;
 using TGC.MonoGame.TP.Content.Gizmos;
+using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace TGC.MonoGame.TP.Entities
 {
@@ -98,10 +100,11 @@ namespace TGC.MonoGame.TP.Entities
 
             Effect.Parameters["View"].SetValue(Camera.View);
             Effect.Parameters["Projection"].SetValue(Camera.Projection);
+            Effect.Parameters["DiffuseColor"].SetValue(Color.Yellow.ToVector3());
 
             foreach (var mesh in Model.Meshes)
             {
-                Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
+                Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * Matrix.CreateScale(5) * World);
 
                 foreach (var meshPart in mesh.MeshParts)
                 {

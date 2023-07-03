@@ -12,14 +12,16 @@ namespace TGC.MonoGame.TP.Entities
     {
         private const string ContentFolderEffects = "Effects/";
         private const string ContentFolderTextures = "Textures/";
-        private const int RowsOfQuads = 500;
+        private const int RowsOfQuads = 200;
         private GraphicsDevice GraphicsDevice { get; }
         private Quad Quad { get; }
+        private Quad ShipQuad { get; }
 
         public Water(GraphicsDevice graphicsDevice)
         {
             GraphicsDevice = graphicsDevice;
             Quad = new Quad(graphicsDevice, RowsOfQuads);
+            ShipQuad = new Quad(graphicsDevice, 1500);
         }
 
         public void LoadContent(ContentManager contentManager)
@@ -27,6 +29,7 @@ namespace TGC.MonoGame.TP.Entities
             var waterTexture = contentManager.Load<Texture2D>(ContentFolderTextures + "water");
             var textureEffect = contentManager.Load<Effect>(ContentFolderEffects + "OceanShader");
             Quad.LoadContent(textureEffect, waterTexture);
+            ShipQuad.LoadContent(textureEffect, waterTexture);
         }
 
         /// <summary>
@@ -37,15 +40,19 @@ namespace TGC.MonoGame.TP.Entities
         /// <param name="view"></param>
         /// <param name="projection"></param>
         /// <param name="time"></param>
-        public void Draw(Vector3 lightPosition, Camera camera, float time, RenderTargetCube renderTargetCube)
+        public void Draw(Vector3 ShipPosition, Vector3 lightPosition, Camera camera, float time, RenderTarget2D renderTargetCube)
         {
-            const float escala = 500f;
-            var world = Matrix.CreateScale(escala);
+            var waterPosition = ShipPosition;
+            waterPosition.Y = 0;
+            var world = Matrix.CreateScale(500f) * Matrix.CreateTranslation(waterPosition);
+            var worldAbove = Matrix.CreateScale(50f) * Matrix.CreateTranslation(waterPosition);
 
             GraphicsDevice.BlendState = BlendState.Opaque;
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
-            
-            Quad.Draw(lightPosition, camera, world, time, renderTargetCube);
+            Quad.SetOceanDrawing();
+            Quad.Draw(lightPosition, camera, world * Matrix.CreateTranslation(Vector3.Down * 0.27f), time, renderTargetCube);
+            Quad.SetEnvironmentMappingDrawing();
+            Quad.Draw(lightPosition, camera, worldAbove, time, renderTargetCube);
         }
         
         public void SetOceanDrawing()

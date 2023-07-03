@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace TGC.MonoGame.TP;
 
@@ -38,8 +39,11 @@ public class GlobalConfigurationSingleton
     public float PlayerSecsBetweenChanges = .5f;  // Tiempo de bloqueo entre cambios del barco
     public float PlayerMaxRotationVelocity = 1;
     public float PlayerAcceleration = 2;
-    public float PlayerScaleInEnvironment { get; set; } = 0.2f;
-    public Vector3 PlayerTranslationInEnvironment { get; set; } = new Vector3(0, 1.8f, 0);
+    
+    // Cameras Config
+    public float FollowCameraDistanceInEnvironment { get; set; } = 3.200f;
+    public float ShipCameraRadiusInEnvironment { get; set; } = 50f;
+    public float MenuCamaraDistanceInEnvironment { get; set; } = 18f;
 
     // Water Config
     public Color WaterAmbientColor { get; set; } = new (124, 208, 255);
@@ -50,4 +54,30 @@ public class GlobalConfigurationSingleton
     public float WaterKSpecular { get; set; } = 0.27f;
     public float WaterShininess { get; set; } = 6.67f;
     public Color WaterColor { get; set; } = new (57, 180, 211);
+
+    // Island Config
+    public Color IslandAmbientColor { get; set; } = new (219, 244, 76);
+    public Color IslandDiffuseColor { get; set; } = new (124, 125, 121);
+    public Color IslandSpecularColor { get; set; } = new (71, 71, 65);
+    public float IslandKAmbient { get; set; } = 0.480f;
+    public float IslandKDiffuse { get; set; } = 0.400f;
+    public float IslandKSpecular { get; set; } = 0.2f;
+    public float IslandShininess { get; set; } = 32f;
+    
+    // Ship Config
+    public float DistanceAboveWater { get; set; } = 0.5f;
+    public Color ShipAmbientColor { get; set; } = new (164, 156, 156);
+    public Color ShipDiffuseColor { get; set; } = new (126, 117, 110);
+    public Color ShipSpecularColor { get; set; } = new (204, 204, 204);
+    public float ShipKAmbient { get; set; } = 0.53f;
+    public float ShipKDiffuse { get; set; } = 0.2f;
+    public float ShipKSpecular { get; set; } = 0.2f;
+    public float ShipShininess { get; set; } = 32f;
+
+    public List<Vector4> Waves { get; set; } = new List<Vector4>()
+    {
+        new Vector4(0.1f, 20, 1, 1),
+        new Vector4(0.1f, 10, 1, 0.6f),
+        new Vector4(0.1f, 5, 1, 1.3f)
+    };
 }

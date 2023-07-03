@@ -20,6 +20,8 @@ namespace TGC.MonoGame.TP.Cameras
         private float RightVectorInterpolator { get; set; } = 0f;
 
         private Microsoft.Xna.Framework.Vector3 PastRightVector { get; set; } = Vector3.Right;
+        private bool IsEnvironmentCamera { get; set; } = false;
+        private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
 
         private int lastWheelValue;
         private float radius;
@@ -31,16 +33,16 @@ namespace TGC.MonoGame.TP.Cameras
         /// Crea una FollowCamera que sigue a una matriz de mundo
         /// </summary>
         /// <param name="aspectRatio"></param>
-        public ShipCamera(float aspectRatio) : base(aspectRatio)
+        public ShipCamera(float aspectRatio, bool isEnvironmentCamera = false) : base(aspectRatio)
         {
             // Orthographic camera
             // Projection = Matrix.CreateOrthographic(screenWidth, screenHeight, 0.01f, 10000f);
-
+            IsEnvironmentCamera = isEnvironmentCamera;
             // Perspective camera
             // Uso 60° como FOV, aspect ratio, pongo las distancias a near plane y far plane en 0.1 y 100000 (mucho) respectivamente
             Projection = Matrix.CreatePerspectiveFieldOfView(MathF.PI / 1.8f, aspectRatio, 0.1f, 1000f);
 
-            radius = 7f;
+            radius = isEnvironmentCamera ? GlobalConfig.ShipCameraRadiusInEnvironment : 7f;
             pitch = 10.0f;
             yaw = 180.0f;
             factor = 5f;
@@ -61,7 +63,7 @@ namespace TGC.MonoGame.TP.Cameras
             if (isGameActive) detectarMovimiento(deltaTime);
 
             Position = followedPosition + new Vector3(radius * MathF.Cos(MathHelper.ToRadians(yaw) * MathF.Cos(MathHelper.ToRadians(pitch)))
-                    , radius * MathF.Sin(MathHelper.ToRadians(pitch))
+                    , (IsEnvironmentCamera ? -1 : 1) * radius * MathF.Sin(MathHelper.ToRadians(pitch))
                     , radius * MathF.Sin(MathHelper.ToRadians(yaw) * MathF.Cos(MathHelper.ToRadians(pitch))));
 
             // Calculo el vector Arriba actualizado

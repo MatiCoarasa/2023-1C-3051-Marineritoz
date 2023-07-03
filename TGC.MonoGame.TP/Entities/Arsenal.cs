@@ -23,6 +23,7 @@ namespace TGC.MonoGame.TP.Entities
         private Model Model;
         private const string ContentFolder3D = "Models/";
         public const string ContentFolderSounds = "Sounds/";
+        public const string ContentFolderEffects = "Effects/";
 
         private Obus[] _bullets;
 
@@ -118,7 +119,7 @@ namespace TGC.MonoGame.TP.Entities
         public void LoadContent(ContentManager content, Effect effect)
         {
 
-            Effect = effect;
+            Effect = content.Load<Effect>(ContentFolderEffects + "BasicShader");
             Model = content.Load<Model>(ContentFolder3D + "Obus/Obus");
 
             foreach (var mesh in Model.Meshes)
@@ -131,7 +132,7 @@ namespace TGC.MonoGame.TP.Entities
 
             foreach (var bullet in _bullets)
             {
-                bullet.LoadContent(content,effect,Model);
+                bullet.LoadContent(content, Effect, Model);
             }
         }
 

@@ -6,6 +6,7 @@ namespace TGC.MonoGame.TP.Utils;
 
 public static class WaterFormula
 {
+    private static GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
     private static Vector3 GerstnerWave(float time, ref Vector3 tangent, ref Vector3 binormal, Vector4 wave, Vector3 position)
     {
         var steepness = wave.X;
@@ -47,12 +48,9 @@ public static class WaterFormula
         var position = anchorPosition;
         var tangent = new Vector3(1, 0, 0);
         var binormal = new Vector3(0, 0, 1);
-        var wave1 = Wave(0.1f, 20, new Vector2(1,1));
-        var wave2 = Wave(0.1f, 10, new Vector2(1,0.6f));
-        var wave3 = Wave(0.1f, 5, new Vector2(1,1.3f));
-        position += GerstnerWave(timer, ref tangent, ref binormal, wave1, anchorPosition);
-        position += GerstnerWave(timer, ref tangent, ref binormal, wave2, anchorPosition);
-        position += GerstnerWave(timer, ref tangent, ref binormal, wave3, anchorPosition);
+        position += GerstnerWave(timer, ref tangent, ref binormal, GlobalConfig.Waves[0], anchorPosition);
+        position += GerstnerWave(timer, ref tangent, ref binormal, GlobalConfig.Waves[1], anchorPosition);
+        position += GerstnerWave(timer, ref tangent, ref binormal, GlobalConfig.Waves[2], anchorPosition);
         return new WaterPosition(position, tangent, binormal);
     }
 }
