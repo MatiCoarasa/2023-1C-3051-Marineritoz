@@ -241,10 +241,10 @@ public class ShipPlayer
         Game.Gizmos.DrawLine(World.Translation, WaterPosition.tangent + World.Translation, Color.Violet);
     }
 
-    public void CheckCollision(BoundingBox boundingBox, HealthBar healthBar)
+    public bool CheckCollision(BoundingBox boundingBox, HealthBar healthBar)
     {
-        if (CurrentVelocity == 0f) return;
-        
+        // if (CurrentVelocity == 0f) return false;
+
         if (!IsReactingToCollision && ShipBoundingBox.Intersects(boundingBox))
         {
             if (LastCollisionTimer > 1f)
@@ -254,8 +254,7 @@ public class ShipPlayer
             }
             HasCollisioned = true;
         }
-
-        Arsenal.CheckCollision(boundingBox);
+        return HasCollisioned || Arsenal.CheckCollision(boundingBox);
     }
     
 }

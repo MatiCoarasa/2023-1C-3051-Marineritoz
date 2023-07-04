@@ -123,13 +123,9 @@ namespace TGC.MonoGame.TP.Entities
             Game.Gizmos.DrawCube(ObusOBBWorld, Color.White);
         }
 
-        public void CheckCollision(BoundingBox boundingBox)
+        public bool CheckCollision(BoundingBox boundingBox)
         {
-
-            if (OBBObus.Intersects(boundingBox))
-            {
-               //TODO implementar impacto de bala.
-            }
+            return OBBObus.Intersects(boundingBox);
         }
 
     }

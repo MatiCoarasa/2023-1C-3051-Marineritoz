@@ -13,6 +13,7 @@ public static class Options
     private static ModifierController WavesModifier = new();
     private static ModifierController IslandModifier = new();
     private static ModifierController ShipModifier = new();
+    private static ModifierController EnemyModifier = new();
 
     public static void LoadModifiers()
     {
@@ -65,6 +66,7 @@ public static class Options
         AddWave(2);
         IslandModifiers();
         ShipModifiers();
+        EnemyModifiers();
     }
 
     public static void AddWave(int i)
@@ -162,6 +164,42 @@ public static class Options
             GlobalConfig.ShipShininess = value;
         }, GlobalConfig.ShipShininess, 1f, 64f);
     }
+    
+    private static void EnemyModifiers()
+    {
+        EnemyModifier.AddColor("Ambient Color", delegate(Color color)
+        {
+            GlobalConfig.EnemyAmbientColor = color;
+        }, GlobalConfig.EnemyAmbientColor);
+        EnemyModifier.AddColor("Diffuse Color", delegate(Color color)
+        {
+            GlobalConfig.EnemyDiffuseColor = color;
+        }, GlobalConfig.EnemyDiffuseColor);
+        EnemyModifier.AddColor("Specular Color", delegate(Color color)
+        {
+            GlobalConfig.EnemySpecularColor = color;
+        }, GlobalConfig.EnemySpecularColor);
+        EnemyModifier.AddFloat("KAmbient", delegate(float value)
+        {
+            GlobalConfig.EnemyKAmbient = value;
+        }, GlobalConfig.EnemyKAmbient, 0f, 1f);
+        EnemyModifier.AddFloat("KDiffuse", delegate(float value)
+        {
+            GlobalConfig.EnemyKDiffuse = value;
+        }, GlobalConfig.EnemyKDiffuse, 0f, 1f);
+        EnemyModifier.AddFloat("KSpecular", delegate(float value)
+        {
+            GlobalConfig.EnemyKSpecular = value;
+        }, GlobalConfig.EnemyKSpecular, 0f, 1f);
+        EnemyModifier.AddFloat("Shininess", delegate(float value)
+        {
+            GlobalConfig.EnemyShininess = value;
+        }, GlobalConfig.EnemyShininess, 1f, 64f);
+        EnemyModifier.AddFloat("Enemy Velocity", delegate(float value)
+        {
+            GlobalConfig.EnemyVelocity = value;
+        }, GlobalConfig.EnemyVelocity, 1f, 100f);
+    }
 
     public static void DrawLayout()
     {
@@ -179,6 +217,11 @@ public static class Options
         if (ImGui.CollapsingHeader("Island"))
         {
             IslandModifier.Draw();
+            ImGui.EndMenu();
+        }
+        if (ImGui.CollapsingHeader("Enemy"))
+        {
+            EnemyModifier.Draw();
             ImGui.EndMenu();
         }
         if (ImGui.CollapsingHeader("Waves"))

@@ -41,6 +41,7 @@ namespace TGC.MonoGame.TP.Entities
         private SoundEffect GunShotEffect { get; set; }
 
         public Arsenal(TGCGame game,int size, Vector3 shipPosition) {
+            
             ShipPosition = shipPosition;
             _size = size;
             _bullets = new Obus[_size];
@@ -136,12 +137,14 @@ namespace TGC.MonoGame.TP.Entities
             }
         }
 
-        public void CheckCollision(BoundingBox collider)
+        public bool CheckCollision(BoundingBox collider)
         {
+            var hasCollisioned = false;
             foreach( var bullet in _bullets)
             {
-                bullet.CheckCollision(collider);
+                hasCollisioned = hasCollisioned || bullet.CheckCollision(collider);
             }
+            return hasCollisioned;
         }
 
     }

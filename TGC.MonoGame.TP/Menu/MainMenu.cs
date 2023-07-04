@@ -42,10 +42,6 @@ public class MainMenu
             var cameraPosition = new Vector3(1, 10, 1);
             var frontDirection = -cameraPosition;
             frontDirection.Normalize();
-            var environmentCameraPosition = cameraPosition * GlobalConfig.MenuCamaraDistanceInEnvironment;
-            environmentCameraPosition.Y = -cameraPosition.Y;
-            var environmentFrontDirection = -environmentCameraPosition;
-            environmentFrontDirection.Normalize();
 
             // Obtengo el vector Derecha asumiendo que la camara tiene el vector Arriba apuntando hacia arriba
             // y no esta rotada en el eje X (Roll)
@@ -54,10 +50,8 @@ public class MainMenu
             // Una vez que tengo la correcta direccion Derecha, obtengo la correcta direccion Arriba usando
             // otro producto vectorial
             var cameraCorrectUp = Vector3.Cross(right, frontDirection);
-            var environmentCameraCorrectUp = Vector3.Cross(right, environmentFrontDirection);
-
             _camera = new StaticCamera(cameraPosition, frontDirection, cameraCorrectUp);
-            _environmentCamera = new StaticCamera(environmentCameraPosition, environmentFrontDirection, environmentCameraCorrectUp);
+            _environmentCamera = new FollowCamera(_game.GraphicsDevice.Viewport.AspectRatio);
 
             var buttons = new List<Button>
             {
@@ -116,7 +110,7 @@ public class MainMenu
         {
             DrawEnvironment(_environmentCamera);
             _water.SetOceanDrawing();
-            _water.Draw(Vector3.Zero, _sunlight.Light.Position, _camera, totalTime, _environmentMapRenderTarget);
+            _water.Draw(_ship.World.Translation, _sunlight.Light.Position, _camera, totalTime, _environmentMapRenderTarget);
             _sunlight.Draw(_camera, _basicShader);
             _ship.Draw(_camera, _game.SpriteBatch, _sunlight.Light.Position, 0, true);
             var destRectangle = new Rectangle((_screenWidth - _logo.Width)/2,

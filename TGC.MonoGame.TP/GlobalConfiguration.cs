@@ -75,7 +75,16 @@ public class GlobalConfigurationSingleton
     public float ShipKDiffuse { get; set; } = 0.2f;
     public float ShipKSpecular { get; set; } = 0.2f;
     public float ShipShininess { get; set; } = 32f;
-
+    
+    // Enemy Config
+    public Color EnemyAmbientColor { get; set; } = new (164, 156, 156);
+    public Color EnemyDiffuseColor { get; set; } = new (126, 117, 110);
+    public Color EnemySpecularColor { get; set; } = new (204, 204, 204);
+    public float EnemyKAmbient { get; set; } = 0.53f;
+    public float EnemyKDiffuse { get; set; } = 0.2f;
+    public float EnemyKSpecular { get; set; } = 0.2f;
+    public float EnemyShininess { get; set; } = 32f;
+    public float EnemyVelocity { get; set; } = 5f;
     public List<Vector4> Waves { get; set; } = new List<Vector4>()
     {
         new Vector4(0.1f, 20, 1, 1),

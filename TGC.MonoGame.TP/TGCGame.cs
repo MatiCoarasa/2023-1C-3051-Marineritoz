@@ -98,6 +98,8 @@ namespace TGC.MonoGame.TP
         private Song Song { get; set; }
         
         private SunLight SunLight { get; set; }
+        
+        private EnemyShipsGenerator EnemyShipsGenerator { get; set; }
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
         ///     Escribir aqui el codigo de inicializacion: el procesamiento que podemos pre calcular para nuestro juego.
@@ -120,6 +122,7 @@ namespace TGC.MonoGame.TP
 
             Ship = new ShipPlayer(this, true);
             Map = new Map(GraphicsDevice);
+            EnemyShipsGenerator = new EnemyShipsGenerator(this);
             TotalTime = 0;
 
             Water = new Water(GraphicsDevice);
@@ -165,7 +168,9 @@ namespace TGC.MonoGame.TP
             // Load islands
             Map.Load(this, Content, TextureShader);
             _colliders = Map.IslandColliders();
-
+         
+            var enemyShipModel = Content.Load<Model>(ContentFolder3D + "ShipB/source/Ship");
+            EnemyShipsGenerator.LoadContent(enemyShipModel, TextureShader, Map);
             Rain.Load();
             
             Options.LoadModifiers();
@@ -226,6 +231,7 @@ namespace TGC.MonoGame.TP
             var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             Gizmos.UpdateViewProjection(camera.View, camera.Projection);
             ShipPosition = Ship.Update(TotalTime, deltaTime, camera, EnvironmentFollowCamera);
+            EnemyShipsGenerator.Update(TotalTime, deltaTime, ShipPosition, Ship, HealthBar, Map);
             foreach (var collider in _colliders)
             {
                 Ship.CheckCollision(collider, HealthBar);
@@ -291,9 +297,8 @@ namespace TGC.MonoGame.TP
             Rain.Draw(TotalTime, camera);
             Water.Draw(ShipPosition, SunLight.Light.Position, camera, TotalTime, EnvironmentMapRenderTarget);
             SunLight.Draw(camera, BasicShader);
-
+            EnemyShipsGenerator.Draw(camera, SunLight.Light.Position);
             Map.Draw(this, camera, SunLight.Light.Position, FrustumBounding);
-
             Ship.Draw(camera, SpriteBatch, SunLight.Light.Position, GraphicsDevice.Viewport.Height, true);
             HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
             Gizmos.Draw();
