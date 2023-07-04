@@ -14,6 +14,7 @@ using TGC.MonoGame.TP.Entities.Light;
 using TGC.MonoGame.TP.Menu;
 using TGC.MonoGame.TP.Menu.GodMode;
 using TGC.MonoGame.TP.Utils.GUI.ImGuiNET;
+using System.Collections.Generic;
 
 namespace TGC.MonoGame.TP
 {
@@ -45,7 +46,7 @@ namespace TGC.MonoGame.TP
         private float _timeSinceLastScreenChange;
         
         private Island[] Islands { get; set; }
-        private IslandGenerator IslandGenerator { get; set; }
+        private Map Map { get; set; }
         private Water Water { get; set; }
         private float Time { get; }
         private SpriteFont Font { get; set; }
@@ -53,7 +54,7 @@ namespace TGC.MonoGame.TP
         public GraphicsDeviceManager Graphics { get; }
         public SpriteBatch SpriteBatch { get; set; }
 
-        private BoundingBox[] _colliders;
+        private List<BoundingBox> _colliders = new List<BoundingBox> { };
 
         private Rain Rain { get; set; }
 
@@ -64,6 +65,8 @@ namespace TGC.MonoGame.TP
         
         private HealthBar HealthBar { get; set; }
         private ImGuiRenderer ImGuiRenderer { get; set; }
+
+        private BoundingFrustum FrustumBounding { get; set; }
         
         private float TotalTime { get; set; }
         private RenderTarget2D EnvironmentMapRenderTarget { get; set; }
@@ -116,7 +119,7 @@ namespace TGC.MonoGame.TP
             _menu = new MainMenu(this);
 
             Ship = new ShipPlayer(this, true);
-            IslandGenerator = new IslandGenerator(this);
+            Map = new Map(GraphicsDevice);
             TotalTime = 0;
 
             Water = new Water(GraphicsDevice);
@@ -130,7 +133,6 @@ namespace TGC.MonoGame.TP
                 GlobalConfig.RainColor
                 );
 
-            _colliders = new BoundingBox[GlobalConfig.IslandsQuantity];
             SunLight = new SunLight(GraphicsDevice);
             HealthBar = new HealthBar();
             base.Initialize();
@@ -161,13 +163,9 @@ namespace TGC.MonoGame.TP
             HealthBar.LoadContent(Content);
             _menu.LoadContent(BasicShader, Ship, Font, new RenderTarget2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.Depth24));
             // Load islands
-            IslandGenerator.LoadContent(Content, TextureShader);
-            Islands = IslandGenerator.CreateRandomIslands(GlobalConfig.IslandsQuantity, GlobalConfig.IslandsMaxXSpawn, GlobalConfig.IslandsMaxZSpawn, GlobalConfig.SpawnBoxSize);
-            for (var i = 0; i < Islands.Length; i++)
-            {
-                _colliders[i] = Islands[i].BoundingBox;
-            }
-            
+            Map.Load(this, Content, TextureShader);
+            _colliders = Map.IslandColliders();
+
             Rain.Load();
             
             Options.LoadModifiers();
@@ -286,16 +284,16 @@ namespace TGC.MonoGame.TP
 
         private void GameDraw(Camera camera)
         {
+
+            FrustumBounding = new BoundingFrustum(camera.View * camera.Projection);
             GraphicsDevice.Clear(GlobalConfig.SkyColor);
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             Rain.Draw(TotalTime, camera);
             Water.Draw(ShipPosition, SunLight.Light.Position, camera, TotalTime, EnvironmentMapRenderTarget);
             SunLight.Draw(camera, BasicShader);
-            foreach (var island in Islands)
-            {
-                GraphicsDevice.BlendState = BlendState.Opaque;
-                island.Draw(camera, SunLight.Light.Position);
-            }
+
+            Map.Draw(this, camera, SunLight.Light.Position, FrustumBounding);
+
             Ship.Draw(camera, SpriteBatch, SunLight.Light.Position, GraphicsDevice.Viewport.Height, true);
             HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
             Gizmos.Draw();

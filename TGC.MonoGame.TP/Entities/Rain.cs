@@ -39,6 +39,9 @@ namespace TGC.MonoGame.TP
 
         private VertexDeclaration _instanceDeclaration;
 
+        private float _scale = 1f;
+
+
         public Rain(ContentManager content, GraphicsDevice graphics)
         {
             GraphicsDevice = graphics;
@@ -78,10 +81,10 @@ namespace TGC.MonoGame.TP
             // Pasa la ram a GPU
             _vertexBuffer.SetData(new VertexPositionColorNormal[]
             {
-                new(new Vector3(0f, -1f, -0.03f), Color.Blue, Vector3.UnitX),
-                new(new Vector3(0f, -1f, 0.03f), Color.White, Vector3.UnitX),
-                new(new Vector3(0f, 1f, 0.03f), Color.White, Vector3.UnitX),
-                new(new Vector3(0f, 1f, -0.03f), Color.SkyBlue, Vector3.UnitX),
+                new(new Vector3(0f, -1f * _scale, -0.03f * _scale), Color.Blue, Vector3.UnitX),
+                new(new Vector3(0f, -1f * _scale, 0.03f * _scale), Color.White, Vector3.UnitX),
+                new(new Vector3(0f, 1f * _scale, 0.03f * _scale), Color.White, Vector3.UnitX),
+                new(new Vector3(0f, 1f * _scale, -0.03f * _scale), Color.SkyBlue, Vector3.UnitX),
             });
 
 

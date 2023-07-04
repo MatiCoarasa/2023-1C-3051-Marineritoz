@@ -33,7 +33,7 @@ public class ShipPlayer
     private float Rotation { get; set; }
 
     private Matrix OBBWorld { get; set; }
-    private OrientedBoundingBox ShipBoundingBox { get; set; }
+    public OrientedBoundingBox ShipBoundingBox { get; set; }
     private bool HasCollisioned { get; set; }
     private bool IsReactingToCollision { get; set; }
     private float LastCollisionTimer { get; set; } = 0;

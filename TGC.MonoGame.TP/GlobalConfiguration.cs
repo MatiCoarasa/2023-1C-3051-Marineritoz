@@ -19,14 +19,16 @@ public class GlobalConfigurationSingleton
 
     // Rain config
     public float RainSize = 100;
-    public float RainMaxHeight = 150;
+    public float RainMaxHeight = 50;
     public float RainMinHeight = -3;
     public int RainDropCount = 500;
     public float RainSpeedDrop = 1;
     public Color RainColor = Color.White;
 
     // Island generation config
-    public int IslandsQuantity = 100;
+    //public int IslandsQuantity = 100; Inutilizada
+    public int BlockSize = 600; // Calzado a 600 porque el tamaño maximo de la isla tipo 2 es 580.
+    public float SquarePerSize = 20;  // Deben ser un numero PAR
     public float IslandsMinScale = .8f;  // Value between 0 and 1
     public float IslandsMaxScale = 1f;  // Value between 0 and 1
     public float IslandsMaxXSpawn = 3000;
