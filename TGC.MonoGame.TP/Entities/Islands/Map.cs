@@ -105,5 +105,22 @@ namespace TGC.MonoGame.TP.Entities.Islands
                 block.Draw(game, camera, lightPosition, bounding);
             }
         }
+
+        public Vector3 getSafeSpawnPosition()
+        {
+            List<Vector3> posicionesSeguras = new List<Vector3> { };
+
+            foreach(Block block in Blocks)
+            {
+                if ( block.VertexPosition != Vector3.Zero )
+                {
+                    posicionesSeguras.Add(block.VertexPosition);
+                }
+            }
+
+            int index = Rnd.Next(posicionesSeguras.Count - 1);
+
+            return posicionesSeguras[index];
+        }
     }
 }

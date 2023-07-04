@@ -12,7 +12,7 @@ namespace TGC.MonoGame.TP.Entities.Islands
     public class Block
     {
         private int BlockSize;
-        private Vector3 VertexPosition = Vector3.Zero;
+        public Vector3 VertexPosition = Vector3.Zero;
         private Vector3 vectorCentro;
         private BoundingBox BlockBoundinBox;
 
