@@ -8,16 +8,16 @@ namespace TGC.MonoGame.TP.Entities;
 
 public class EnemyShipsGenerator
 {
-    private List<EnemyShip> EnemyShips { get; set; } = new ();
-    private int QuantityOfShips = 20;
+    private EnemyShip[] EnemyShips { get; set; }
     private Effect Effect { get; set; }
     private List<Texture2D> ColorTextures { get; } = new List<Texture2D>();
 
     public EnemyShipsGenerator(TGCGame game)
     {
-        for (int i = 0; i < QuantityOfShips; i++)
+        EnemyShips = new EnemyShip[4];
+        for (int i = 0; i < EnemyShips.Length; i++)
         {
-            EnemyShips.Add(new EnemyShip(game));
+            EnemyShips[i] = new EnemyShip(game);
         }
     }
 
@@ -35,18 +35,18 @@ public class EnemyShipsGenerator
         }
         foreach (var enemyShip in EnemyShips)
         {
-            enemyShip.LoadContent(model, effect, map.getSafeSpawnPosition());
+            enemyShip.LoadContent(model, effect, map.getSafeSpawnPosition(Vector3.Zero));
         }
     }
 
     public void Update(float totalTime, float deltaTime, Vector3 shipPosition, ShipPlayer shipPlayer, HealthBar healthBar, Map map)
     {
-        foreach (var enemyShip in EnemyShips)
+        for (int i = 0; i < EnemyShips.Length; i++)
         {
-            enemyShip.Update(totalTime, deltaTime, shipPosition);
-            if (shipPlayer.CheckCollision(enemyShip.BoundingBox, healthBar))
+            EnemyShips[i].Update(totalTime, deltaTime, shipPosition, map.IslandColliders());
+            if (shipPlayer.CheckCollision(EnemyShips[i].BoundingBox, healthBar))
             {
-                enemyShip.RestartPosition(map.getSafeSpawnPosition());
+                EnemyShips[i].RestartPosition(map.getSafeSpawnPosition(shipPosition));
             }
         }
     }

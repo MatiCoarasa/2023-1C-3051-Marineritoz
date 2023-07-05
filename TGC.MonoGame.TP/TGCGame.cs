@@ -241,6 +241,7 @@ namespace TGC.MonoGame.TP
                 TotalTime = 0;
                 HealthBar.Life = 100;
                 GameStatus = GameStatus.DeathMenu;
+                Ship.Restart();
             }
             SunLight.Update(TotalTime);
         }

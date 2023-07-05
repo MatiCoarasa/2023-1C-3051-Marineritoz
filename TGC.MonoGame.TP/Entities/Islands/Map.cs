@@ -106,20 +106,17 @@ namespace TGC.MonoGame.TP.Entities.Islands
             }
         }
 
-        public Vector3 getSafeSpawnPosition()
+        public Vector3 getSafeSpawnPosition(Vector3 shipPosition)
         {
             List<Vector3> posicionesSeguras = new List<Vector3> { };
-
             foreach(Block block in Blocks)
             {
-                if ( block.VertexPosition != Vector3.Zero )
+                if (block.VertexPosition != Vector3.Zero && Vector3.Distance(block.VertexPosition, shipPosition) < 850)
                 {
                     posicionesSeguras.Add(block.VertexPosition);
                 }
             }
-
             int index = Rnd.Next(posicionesSeguras.Count - 1);
-
             return posicionesSeguras[index];
         }
     }

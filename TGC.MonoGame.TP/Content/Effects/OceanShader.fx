@@ -159,7 +159,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     
     // Final calculation
     float4 finalColor = float4(saturate(ambientColor * KAmbient + diffuseLight) * DiffuseColor + specularLight, 0.6);
-    return float4(lerp(finalColor, float3(0,0,0), 0.5), 1);
+    return float4(lerp(finalColor, float3(0,0,0), 0.2), 1);
 }
 
 float4 EnvironmentMapWithLightPS(VertexShaderOutput input) : COLOR
@@ -183,7 +183,7 @@ float4 EnvironmentMapWithLightPS(VertexShaderOutput input) : COLOR
 	//Obtener texel de CubeMap
 	float3 reflectionColor = tex2D(TextureSampler, input.TextureCoordinates).rgb;
 
-    return float4(lerp(finalColor, reflectionColor, 0.5), 1);
+    return float4(lerp(finalColor, reflectionColor, 0.2), 1);
 }
 
 float4 EnvironmentMapPS(VertexShaderOutput input) : COLOR

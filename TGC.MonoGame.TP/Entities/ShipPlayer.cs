@@ -57,6 +57,14 @@ public class ShipPlayer
         Arsenal = new Arsenal(game, 15, World.Translation);
     }
 
+    public void Restart()
+    {
+        Position = Vector3.Zero;
+        ShipBoundingBox.Center = Position;
+        Rotation = 0;
+        ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
+    }
+
     public void LoadContent(Effect effect)
     {
         Effect = effect;

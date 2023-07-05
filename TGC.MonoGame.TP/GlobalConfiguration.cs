@@ -28,7 +28,7 @@ public class GlobalConfigurationSingleton
     // Island generation config
     //public int IslandsQuantity = 100; Inutilizada
     public int BlockSize = 600; // Calzado a 600 porque el tamaño maximo de la isla tipo 2 es 580.
-    public float SquarePerSize = 20;  // Deben ser un numero PAR
+    public float SquarePerSize = 10;  // Deben ser un numero PAR
     public float IslandsMinScale = .8f;  // Value between 0 and 1
     public float IslandsMaxScale = 1f;  // Value between 0 and 1
     public float IslandsMaxXSpawn = 3000;
@@ -84,7 +84,7 @@ public class GlobalConfigurationSingleton
     public float EnemyKDiffuse { get; set; } = 0.2f;
     public float EnemyKSpecular { get; set; } = 0.2f;
     public float EnemyShininess { get; set; } = 32f;
-    public float EnemyVelocity { get; set; } = 5f;
+    public float EnemyVelocity { get; set; } = 15f;
     public List<Vector4> Waves { get; set; } = new List<Vector4>()
     {
         new Vector4(0.1f, 20, 1, 1),
