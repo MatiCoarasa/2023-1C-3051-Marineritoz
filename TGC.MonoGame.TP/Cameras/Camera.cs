@@ -8,12 +8,11 @@ namespace TGC.MonoGame.TP.Cameras
         public Matrix Projection { get; set; }
         public Matrix View { get; set; }
 
-        public Vector3 FrontDirection { get; set; }
         public Vector3 RightDirection { get; set; }
         public Vector3 UpDirection { get; set; }
-
+        public Vector3 FrontDirection { get; set; }
         public Vector3 Position { get; set; }
-        public abstract void Update(GameTime gameTime, Matrix followedWorld, bool isGameActive);
+        public abstract void Update(float deltaTime, Matrix followedWorld, bool isGameActive);
 
 
     }

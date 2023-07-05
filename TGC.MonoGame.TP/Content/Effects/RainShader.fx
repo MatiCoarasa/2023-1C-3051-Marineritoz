@@ -49,12 +49,11 @@ VertexShaderOutput MainVS(in InstanceInput instance, in VertexShaderInput input)
     float4 worldPosition;
     
     worldPosition.x = input.LocalPosition.x + instance.Offset.x + CameraPosition.x;
-    worldPosition.y = input.LocalPosition.y + instance.Offset.y;
+    worldPosition.y = input.LocalPosition.y + MaxHeight;
     worldPosition.z = input.LocalPosition.z + instance.Offset.z + CameraPosition.z;
     worldPosition.w = 1;
     
-    float4 worldPositionModified = float4(worldPosition.x, lerp(worldPosition.y, MinHeight, frac(Time * 2 * Speed + worldPosition.y)), worldPosition.zw);
-    
+    float4 worldPositionModified = float4(worldPosition.x, lerp(worldPosition.y, MinHeight, frac(Time * Speed + instance.Offset.y)), worldPosition.zw);    
     
     float3 normalVector = normalize(CameraPosition);
     float3 cameraRight = float3(View[0][0],View[1][0],View[2][0]);

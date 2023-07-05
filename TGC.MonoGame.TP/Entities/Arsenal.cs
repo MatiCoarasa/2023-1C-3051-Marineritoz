@@ -23,6 +23,7 @@ namespace TGC.MonoGame.TP.Entities
         private Model Model;
         private const string ContentFolder3D = "Models/";
         public const string ContentFolderSounds = "Sounds/";
+        public const string ContentFolderEffects = "Effects/";
 
         private Obus[] _bullets;
 
@@ -40,6 +41,7 @@ namespace TGC.MonoGame.TP.Entities
         private SoundEffect GunShotEffect { get; set; }
 
         public Arsenal(TGCGame game,int size, Vector3 shipPosition) {
+            
             ShipPosition = shipPosition;
             _size = size;
             _bullets = new Obus[_size];
@@ -118,7 +120,7 @@ namespace TGC.MonoGame.TP.Entities
         public void LoadContent(ContentManager content, Effect effect)
         {
 
-            Effect = effect;
+            Effect = content.Load<Effect>(ContentFolderEffects + "BasicShader");
             Model = content.Load<Model>(ContentFolder3D + "Obus/Obus");
 
             foreach (var mesh in Model.Meshes)
@@ -131,16 +133,18 @@ namespace TGC.MonoGame.TP.Entities
 
             foreach (var bullet in _bullets)
             {
-                bullet.LoadContent(content,effect,Model);
+                bullet.LoadContent(content, Effect, Model);
             }
         }
 
-        public void CheckCollision(BoundingBox collider)
+        public bool CheckCollision(BoundingBox collider)
         {
+            var hasCollisioned = false;
             foreach( var bullet in _bullets)
             {
-                bullet.CheckCollision(collider);
+                hasCollisioned = hasCollisioned || bullet.CheckCollision(collider);
             }
+            return hasCollisioned;
         }
 
     }

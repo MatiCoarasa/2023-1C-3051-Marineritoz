@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Diagnostics;
+using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP.Entities.Islands;
 
@@ -13,6 +14,7 @@ public class Island
     private Matrix World { get; set; }
     private IList<Texture2D> Textures { get; set; }
     public BoundingBox BoundingBox;
+    private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
 
     public Island(TGCGame game, Model model, Effect effect, IList<Texture2D> textures, float scale, Vector3 translation)
     {
@@ -33,15 +35,24 @@ public class Island
         Debug.WriteLine("Scale: " + scale + " - Translation: " + translation);
     }
     
-    public void Draw(Matrix view, Matrix projection)
+    public void Draw( Camera camera, Vector3 lightPosition)
     {
-        Effect.Parameters["View"].SetValue(view);
-        Effect.Parameters["Projection"].SetValue(projection);
-        
+        Effect.Parameters["View"].SetValue(camera.View);
+        Effect.Parameters["Projection"].SetValue(camera.Projection);
+        Effect.Parameters["lightPosition"].SetValue(lightPosition);
+        Effect.Parameters["eyePosition"]?.SetValue(camera.Position);
+        Effect.Parameters["ambientColor"].SetValue(GlobalConfig.IslandAmbientColor.ToVector3());
+        Effect.Parameters["diffuseColor"].SetValue(GlobalConfig.IslandDiffuseColor.ToVector3());
+        Effect.Parameters["specularColor"].SetValue(GlobalConfig.IslandSpecularColor.ToVector3());
+        Effect.Parameters["KAmbient"].SetValue(GlobalConfig.IslandKAmbient);
+        Effect.Parameters["KDiffuse"].SetValue(GlobalConfig.IslandKDiffuse);
+        Effect.Parameters["KSpecular"].SetValue(GlobalConfig.IslandKSpecular);
+        Effect.Parameters["shininess"].SetValue(GlobalConfig.IslandShininess);
         var index = 0;
         foreach (var mesh in Model.Meshes)
         {
             Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
+            Effect.Parameters["InverseTransposeWorld"].SetValue(Matrix.Invert(Matrix.Transpose(mesh.ParentBone.Transform * World)));
             foreach (var meshPart in mesh.MeshParts)
             {
                 meshPart.Effect.GraphicsDevice.SetVertexBuffer(meshPart.VertexBuffer);

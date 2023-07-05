@@ -16,13 +16,17 @@ public class MainMenu
     private Texture2D _logo;
     private int _screenWidth;
     private int _screenHeight;
-    
+    private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
+
     // Background
     private Camera _camera;
+    private Camera _environmentCamera;
     private Water _water;
     private Effect _basicShader;
     private SunLight _sunlight;
     private ShipPlayer _ship;
+    private SpriteFont _font;
+    private RenderTarget2D _environmentMapRenderTarget { get; set; }
 
 
     public MainMenu (TGCGame game)
@@ -46,8 +50,8 @@ public class MainMenu
             // Una vez que tengo la correcta direccion Derecha, obtengo la correcta direccion Arriba usando
             // otro producto vectorial
             var cameraCorrectUp = Vector3.Cross(right, frontDirection);
-            
-            _camera = new StaticCamera(_game.GraphicsDevice.Viewport.AspectRatio, cameraPosition, frontDirection, cameraCorrectUp);
+            _camera = new StaticCamera(cameraPosition, frontDirection, cameraCorrectUp);
+            _environmentCamera = new FollowCamera(_game.GraphicsDevice.Viewport.AspectRatio);
 
             var buttons = new List<Button>
             {
@@ -63,13 +67,13 @@ public class MainMenu
         ///     Escribir aqui el codigo de inicializacion: cargar modelos, texturas, estructuras de optimizacion, el procesamiento
         ///     que podemos pre calcular para nuestro juego.
         /// </summary>
-        public void LoadContent(Effect basicShader, ShipPlayer ship)
+        public void LoadContent(Effect basicShader, ShipPlayer ship, SpriteFont font, RenderTarget2D renderTarget2D)
         {
             _logo = _game.Content.Load<Texture2D>("Images/altamar");
             _buttons.LoadContent(_game.Content);
-
+            _font = font;
             _water.LoadContent(_game.Content);
-
+            _environmentMapRenderTarget = renderTarget2D;
             _basicShader = basicShader;
             _sunlight.LoadContent(_basicShader);
 
@@ -81,29 +85,45 @@ public class MainMenu
         ///     Se debe escribir toda la logica de computo del modelo, asi como tambien verificar entradas del usuario y reacciones
         ///     ante ellas.
         /// </summary>
-        public void Update(GameTime gameTime)
+        public void Update(float totalTime, float deltaTime)
         {
             _buttons.Update(Mouse.GetState());
-            _sunlight.Update(Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
-            _ship.Update(gameTime, _camera);
+            _sunlight.Update(totalTime);
+            _ship.Update(totalTime, deltaTime, _camera, _environmentCamera);
+        }
+
+        private void DrawEnvironment(Camera camera)
+        {
+            _game.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            _game.GraphicsDevice.SetRenderTarget(_environmentMapRenderTarget);
+            _game.GraphicsDevice.Clear(Color.Transparent);
+            _ship.Draw(camera, _game.SpriteBatch, _sunlight.Light.Position, _game.GraphicsDevice.Viewport.Height, false);
+            _game.GraphicsDevice.SetRenderTarget(null);
+            _game.GraphicsDevice.Clear(GlobalConfig.SkyColor);
         }
 
         /// <summary>
         ///     Se llama cada vez que hay que refrescar la pantalla.
         ///     Escribir aqui el codigo referido al renderizado.
         /// </summary>
-        public void Draw(GameTime gameTime)
+        public void Draw(float totalTime, GameStatus gameStatus)
         {
-            _game.GraphicsDevice.Clear(Color.LightGray);
-            _water.Draw(_sunlight.Light.Position, _camera, Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds));
+            DrawEnvironment(_environmentCamera);
+            _water.SetOceanDrawing();
+            _water.Draw(_ship.World.Translation, _sunlight.Light.Position, _camera, totalTime, _environmentMapRenderTarget);
             _sunlight.Draw(_camera, _basicShader);
-            _ship.Draw(_camera, _game.SpriteBatch, 0);
+            _ship.Draw(_camera, _game.SpriteBatch, _sunlight.Light.Position, 0, true);
             var destRectangle = new Rectangle((_screenWidth - _logo.Width)/2,
                 _screenHeight/100, _logo.Width, _logo.Height);
             _game.SpriteBatch.Begin();
             _game.SpriteBatch.Draw(_logo, destRectangle, Color.White);
+            if (gameStatus == GameStatus.DeathMenu)
+            {
+                var text = "Perdiste!";
+                var size = _font.MeasureString(text);
+                _game.SpriteBatch.DrawString(_font, text, new Vector2((_screenWidth - size.Y)/2, 20), Color.Black);
+            }
             _game.SpriteBatch.End();
-            
             _buttons.Draw(_game.SpriteBatch);
         }
 

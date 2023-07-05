@@ -17,7 +17,8 @@ public class ShipPlayer
     private Model Model { get; set; }
     private WaterPosition WaterPosition { get; set; }
     private Effect Effect { get; set; }
-    private Matrix World { get; set; }
+    public Matrix World { get; set; }
+    public Matrix EnvironmentWorld { get; set; }
 
     private IList<Texture2D> ColorTextures { get; } = new List<Texture2D>();
 
@@ -32,7 +33,7 @@ public class ShipPlayer
     private float Rotation { get; set; }
 
     private Matrix OBBWorld { get; set; }
-    private OrientedBoundingBox ShipBoundingBox { get; set; }
+    public OrientedBoundingBox ShipBoundingBox { get; set; }
     private bool HasCollisioned { get; set; }
     private bool IsReactingToCollision { get; set; }
     private float LastCollisionTimer { get; set; } = 0;
@@ -54,6 +55,14 @@ public class ShipPlayer
         WaterPosition = new WaterPosition();
         GearBox = new GearBox();
         Arsenal = new Arsenal(game, 15, World.Translation);
+    }
+
+    public void Restart()
+    {
+        Position = Vector3.Zero;
+        ShipBoundingBox.Center = Position;
+        Rotation = 0;
+        ShipBoundingBox.Orientation = Matrix.CreateRotationY(Rotation);
     }
 
     public void LoadContent(Effect effect)
@@ -82,11 +91,8 @@ public class ShipPlayer
         }
     }
     
-    public Vector3 Update(GameTime gameTime, Camera followCamera)
+    public Vector3 Update(float totalTime, float deltaTime, Camera followCamera, Camera environmentCamera = null)
     {
-        var deltaTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
-        var totalTime = Convert.ToSingle(gameTime.TotalGameTime.TotalSeconds);
-        
         LastVelocityChangeTimer += deltaTime;
         LastCollisionTimer += deltaTime;
 
@@ -106,12 +112,11 @@ public class ShipPlayer
         World = OBBWorld = Matrix.CreateScale(GlobalConfig.PlayerScale)
                            * Matrix.CreateRotationY(Rotation)
                            * Matrix.CreateWorld(Vector3.Zero, - WaterPosition.binormal, WaterPosition.normal)
-                           * Matrix.CreateTranslation(WaterPosition.position);
-
-            
+                           * Matrix.CreateTranslation(WaterPosition.position + Vector3.Up * GlobalConfig.DistanceAboveWater); 
         Arsenal.Update(deltaTime, Position, followCamera);
 
-        followCamera.Update(gameTime, World, Game.IsActive);
+        followCamera.Update(deltaTime, World, Game.IsActive);
+        environmentCamera?.Update(deltaTime, World, Game.IsActive);
         return World.Translation;
     }
     
@@ -195,17 +200,27 @@ public class ShipPlayer
         return Rotation - preRotation;
     }
 
-    public void Draw(Camera followCamera, SpriteBatch spriteBatch, float height)
+    public void Draw(Camera followCamera, SpriteBatch spriteBatch, Vector3 lightPosition, float height, bool isNormalCamera)
     {
         Effect.Parameters["View"].SetValue(followCamera.View);
         Effect.Parameters["Projection"].SetValue(followCamera.Projection);
-
+        Effect.Parameters["lightPosition"].SetValue(lightPosition);
+        Effect.Parameters["eyePosition"]?.SetValue(followCamera.Position);
+        Effect.Parameters["ambientColor"].SetValue(GlobalConfig.ShipAmbientColor.ToVector3());
+        Effect.Parameters["diffuseColor"].SetValue(GlobalConfig.ShipDiffuseColor.ToVector3());
+        Effect.Parameters["specularColor"].SetValue(GlobalConfig.ShipSpecularColor.ToVector3());
+        Effect.Parameters["KAmbient"].SetValue(GlobalConfig.ShipKAmbient);
+        Effect.Parameters["KDiffuse"].SetValue(GlobalConfig.ShipKDiffuse);
+        Effect.Parameters["KSpecular"].SetValue(GlobalConfig.ShipKSpecular);
+        Effect.Parameters["shininess"].SetValue(GlobalConfig.ShipShininess);
         var index = 0;
         Game.GraphicsDevice.BlendState = BlendState.Opaque;
 
+        var world = isNormalCamera ? World : Matrix.CreateRotationY((float) Math.PI) * World;
         foreach (var mesh in Model.Meshes)
         {
-            Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * World);
+            Effect.Parameters["World"].SetValue(mesh.ParentBone.Transform * world);
+            Effect.Parameters["InverseTransposeWorld"].SetValue(Matrix.Invert(Matrix.Transpose(mesh.ParentBone.Transform * World)));
             foreach (var meshPart in mesh.MeshParts)
             {
                 meshPart.Effect.GraphicsDevice.SetVertexBuffer(meshPart.VertexBuffer);
@@ -221,9 +236,11 @@ public class ShipPlayer
                 index++;
             }
         }
-        GearBox.Draw(spriteBatch, height);
-
-        Arsenal.Draw(followCamera);
+        if (isNormalCamera)
+        {
+            Arsenal.Draw(followCamera);
+            GearBox.Draw(spriteBatch, height);
+        };
 
         Game.Gizmos.DrawCube(OBBWorld * 2, Color.Red);
         
@@ -232,10 +249,10 @@ public class ShipPlayer
         Game.Gizmos.DrawLine(World.Translation, WaterPosition.tangent + World.Translation, Color.Violet);
     }
 
-    public void CheckCollision(BoundingBox boundingBox, HealthBar healthBar)
+    public bool CheckCollision(BoundingBox boundingBox, HealthBar healthBar)
     {
-        if (CurrentVelocity == 0f) return;
-        
+        // if (CurrentVelocity == 0f) return false;
+
         if (!IsReactingToCollision && ShipBoundingBox.Intersects(boundingBox))
         {
             if (LastCollisionTimer > 1f)
@@ -245,8 +262,7 @@ public class ShipPlayer
             }
             HasCollisioned = true;
         }
-
-        Arsenal.CheckCollision(boundingBox);
+        return HasCollisioned || Arsenal.CheckCollision(boundingBox);
     }
     
 }

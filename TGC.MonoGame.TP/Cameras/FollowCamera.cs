@@ -15,22 +15,25 @@ namespace TGC.MonoGame.TP.Cameras
         private const float AngleThreshold = 0.85f;
 
         private Vector3 CurrentRightVector { get; set; } = Vector3.Right;
+        private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
 
         private float RightVectorInterpolator { get; set; } = 0f;
 
         private Vector3 PastRightVector { get; set; } = Vector3.Right;
+        private bool IsEnvironmentCamera { get; set; } = false;
 
         /// <summary>
         /// Crea una FollowCamera que sigue a una matriz de mundo
         /// </summary>
         /// <param name="aspectRatio"></param>
-        public FollowCamera(float aspectRatio)
+        public FollowCamera(float aspectRatio, bool isEnvironmentCamera = false)
         {
             // Orthographic camera
             // Projection = Matrix.CreateOrthographic(screenWidth, screenHeight, 0.01f, 10000f);
 
             // Perspective camera
             // Uso 60° como FOV, aspect ratio, pongo las distancias a near plane y far plane en 0.1 y 100000 (mucho) respectivamente
+            IsEnvironmentCamera = isEnvironmentCamera;
             Projection = Matrix.CreatePerspectiveFieldOfView(MathF.PI / 1.8f, aspectRatio, 0.1f, 1000f);
         }
 
@@ -40,9 +43,8 @@ namespace TGC.MonoGame.TP.Cameras
         /// <param name="gameTime">The Game Time to calculate framerate-independent movement</param>
         /// <param name="followedWorld">The World matrix to follow</param>
         /// <param name="isGameActive">bool that indicates if the game window is active</param>
-        public override void Update(GameTime gameTime, Matrix followedWorld, bool isGameActive)
+        public override void Update(float elapsedTime, Matrix followedWorld, bool isGameActive)
         {
-            var elapsedTime = Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);
             // Obtengo la posicion de la matriz de mundo que estoy siguiendo
             var followedPosition = followedWorld.Translation;
 
@@ -77,7 +79,7 @@ namespace TGC.MonoGame.TP.Cameras
             // tomo la posicion que estoy siguiendo, agrego un offset en los ejes Y y Derecha
             Position = followedPosition 
                 + CurrentRightVector * AxisDistanceToTarget
-                + Vector3.Up * AxisDistanceToTarget;
+                + (IsEnvironmentCamera ? Vector3.Down * GlobalConfig.FollowCameraDistanceInEnvironment * AxisDistanceToTarget : Vector3.Up  * AxisDistanceToTarget);
 
             // Calculo el vector Arriba actualizado
             // Nota: No se puede usar el vector Arriba por defecto (0, 1, 0)

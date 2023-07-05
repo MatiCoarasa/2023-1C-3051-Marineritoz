@@ -51,6 +51,13 @@ public class IslandGenerator
         return new Island(Game, IslandsModels[modelNumber], Effect, IslandsTextures[modelNumber], scale, translation);
     }
 
+    public Island CreateIslandWithRandomScale(int modelNumber, Vector3 translation)
+    {
+        var islandScale = Math.Clamp(Rnd.NextSingle() + .25f, GlobalConfig.IslandsMinScale, GlobalConfig.IslandsMaxScale) * .04f;
+        return new Island(Game, IslandsModels[modelNumber], Effect, IslandsTextures[modelNumber], islandScale, translation);
+
+    }
+
     public Island[] CreateRandomIslands(int qty, float maxX, float maxZ, float spawnBoxSize)
     {
         Debug.WriteLine("[CreateRandomIslands] qty: " + qty + " maxX: " + maxX + " maxZ: " + maxZ);

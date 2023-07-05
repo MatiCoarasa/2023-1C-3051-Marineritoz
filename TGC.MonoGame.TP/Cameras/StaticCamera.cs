@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
-using System;
+using Microsoft.Xna.Framework.Graphics;
+using TGC.MonoGame.TP.Cameras;
 
 namespace TGC.MonoGame.TP.Cameras
 {
@@ -11,18 +12,16 @@ namespace TGC.MonoGame.TP.Cameras
         /// <summary>
         ///     Static camera looking at a particular direction, which has the up vector (0,1,0).
         /// </summary>
-        /// <param name="aspectRatio">The aspect ratio of the screen.</param>
         /// <param name="position">The position of the camera.</param>
         /// <param name="frontDirection">The direction where the camera is pointing.</param>
         /// <param name="upDirection">The direction that is "up" from the camera's point of view.</param>
-        public StaticCamera(float aspectRatio, Vector3 position, Vector3 frontDirection, Vector3 upDirection)
+        public StaticCamera(Vector3 position, Vector3 frontDirection, Vector3 upDirection)
         {
             Position = position;
             FrontDirection = frontDirection;
             UpDirection = upDirection;
-            Projection = Matrix.CreatePerspectiveFieldOfView(MathF.PI / 1.8f, aspectRatio, 0.1f, 1000f);
-
             BuildView();
+            BuildProjection(1f, 1f, 1000f, MathHelper.PiOver2);
         }
 
         /// <summary>
@@ -32,11 +31,17 @@ namespace TGC.MonoGame.TP.Cameras
         {
             View = Matrix.CreateLookAt(Position, Position + FrontDirection, UpDirection);
         }
-
-        /// <inheritdoc />
-        public override void Update(GameTime gameTime, Matrix matrix, bool isGameActive)
+        
+        public void BuildProjection(float aspectRatio, float nearPlaneDistance, float farPlaneDistance,
+            float fieldOfViewDegrees)
         {
-            // This camera has no movement, once initialized with position and lookAt it is no longer updated automatically.
+            Projection = Matrix.CreatePerspectiveFieldOfView(fieldOfViewDegrees, aspectRatio, nearPlaneDistance,
+                farPlaneDistance);
+        }
+
+        public override void Update(float elapsedTime, Matrix followedWorld, bool isGameActive)
+        {
+            Position = followedWorld.Translation + new Vector3(0, -1, 0);
         }
     }
 }

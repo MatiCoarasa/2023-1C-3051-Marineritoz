@@ -3,7 +3,7 @@
 public enum GameStatus
 {
     MainMenu,
-    Options,
+    DeathMenu,
     NormalGame,
     GodModeGame,
     Exit,
