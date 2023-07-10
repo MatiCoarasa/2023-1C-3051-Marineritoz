@@ -54,7 +54,7 @@ public class EnemyShip
         IARays[2].Position = origen;
         IARays[2].Direction = Vector3.Cross(Vector3.Normalize(target), Vector3.Up);
     }
-    public void Update(float totalTime, float deltaTime, Vector3 shipPosition, List<BoundingBox> islandsBoxes)
+    public void Update(float totalTime, float deltaTime, Camera followCamera, Vector3 shipPosition, List<BoundingSphere> islandsBoxes)
     {
         shipPosition.Y = 0;
         var vectorDistanceToShip = shipPosition - World.Translation;

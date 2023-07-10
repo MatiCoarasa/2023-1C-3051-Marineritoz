@@ -264,5 +264,21 @@ public class ShipPlayer
         }
         return HasCollisioned || Arsenal.CheckCollision(boundingBox);
     }
-    
+
+    public bool CheckCollision(BoundingSphere boundingSphere, HealthBar healthBar)
+    {
+        // if (CurrentVelocity == 0f) return false;
+
+        if (!IsReactingToCollision && ShipBoundingBox.Intersects(boundingSphere))
+        {
+            if (LastCollisionTimer > 1f)
+            {
+                healthBar.Life -= 15;
+                LastCollisionTimer = 0f;
+            }
+            HasCollisioned = true;
+        }
+        return HasCollisioned;
+    }
+
 }

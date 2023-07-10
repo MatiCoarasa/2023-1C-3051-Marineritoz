@@ -39,11 +39,11 @@ public class EnemyShipsGenerator
         }
     }
 
-    public void Update(float totalTime, float deltaTime, Vector3 shipPosition, ShipPlayer shipPlayer, HealthBar healthBar, Map map)
+    public void Update(float totalTime, float deltaTime, Camera camera, Vector3 shipPosition, ShipPlayer shipPlayer, HealthBar healthBar, Map map)
     {
         for (int i = 0; i < EnemyShips.Length; i++)
         {
-            EnemyShips[i].Update(totalTime, deltaTime, shipPosition, map.IslandColliders());
+            EnemyShips[i].Update(totalTime, deltaTime, camera, shipPosition, map.IslandColliders());
             if (shipPlayer.CheckCollision(EnemyShips[i].BoundingBox, healthBar))
             {
                 EnemyShips[i].RestartPosition(map.getSafeSpawnPosition(shipPosition));

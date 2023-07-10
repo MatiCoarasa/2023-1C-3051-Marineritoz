@@ -81,15 +81,18 @@ namespace TGC.MonoGame.TP.Entities.Islands
 
         }
 
-        public List<BoundingBox> IslandColliders()
+        public List<BoundingSphere> IslandColliders()
         {
-            List<BoundingBox> boxes = new List<BoundingBox>();
+            List<BoundingSphere> boxes = new List<BoundingSphere>();
 
             foreach(Block block in Blocks)
             {
                foreach(Island island in block.Islands)
                 {
-                    boxes.Add(island.BoundingBox);
+                    foreach( BoundingSphere bounding in island.IslasColliders)
+                    {
+                        boxes.Add(bounding);
+                    }
                 }
             }
 

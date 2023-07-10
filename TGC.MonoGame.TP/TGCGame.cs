@@ -40,7 +40,7 @@ namespace TGC.MonoGame.TP
         private Effect TextureShader { get; set; }
         private Effect BasicShader { get; set; }
         public Gizmos Gizmos { get; }
-        private const bool GizmosEnabled = false;
+        private const bool GizmosEnabled = true;
 
         private bool _justChangedScreens;
         private float _timeSinceLastScreenChange;
@@ -54,7 +54,7 @@ namespace TGC.MonoGame.TP
         public GraphicsDeviceManager Graphics { get; }
         public SpriteBatch SpriteBatch { get; set; }
 
-        private List<BoundingBox> _colliders = new List<BoundingBox> { };
+        private List<BoundingSphere> _colliders = new List<BoundingSphere> { };
 
         private Rain Rain { get; set; }
 
@@ -231,7 +231,7 @@ namespace TGC.MonoGame.TP
             var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             Gizmos.UpdateViewProjection(camera.View, camera.Projection);
             ShipPosition = Ship.Update(TotalTime, deltaTime, camera, EnvironmentFollowCamera);
-            EnemyShipsGenerator.Update(TotalTime, deltaTime, ShipPosition, Ship, HealthBar, Map);
+            EnemyShipsGenerator.Update(TotalTime, deltaTime, camera, ShipPosition, Ship, HealthBar, Map);
             foreach (var collider in _colliders)
             {
                 Ship.CheckCollision(collider, HealthBar);

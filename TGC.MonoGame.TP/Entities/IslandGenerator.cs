@@ -48,13 +48,13 @@ public class IslandGenerator
 
     private Island CreateIsland(int modelNumber, float scale, Vector3 translation)
     {
-        return new Island(Game, IslandsModels[modelNumber], Effect, IslandsTextures[modelNumber], scale, translation);
+        return new Island(Game, IslandsModels[modelNumber], Effect, IslandsTextures[modelNumber], scale, translation, modelNumber);
     }
 
     public Island CreateIslandWithRandomScale(int modelNumber, Vector3 translation)
     {
         var islandScale = Math.Clamp(Rnd.NextSingle() + .25f, GlobalConfig.IslandsMinScale, GlobalConfig.IslandsMaxScale) * .04f;
-        return new Island(Game, IslandsModels[modelNumber], Effect, IslandsTextures[modelNumber], islandScale, translation);
+        return new Island(Game, IslandsModels[modelNumber], Effect, IslandsTextures[modelNumber], islandScale, translation, modelNumber);
 
     }
 
