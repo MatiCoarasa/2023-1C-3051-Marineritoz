@@ -54,6 +54,10 @@ public class Island
         Effect.Parameters["KDiffuse"].SetValue(GlobalConfig.IslandKDiffuse);
         Effect.Parameters["KSpecular"].SetValue(GlobalConfig.IslandKSpecular);
         Effect.Parameters["shininess"].SetValue(GlobalConfig.IslandShininess);
+        var previousBlendState = Game.GraphicsDevice.BlendState;
+        var previousDepthStencilState = Game.GraphicsDevice.DepthStencilState;
+        Game.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+        Game.GraphicsDevice.BlendState = BlendState.Opaque;
         var index = 0;
         foreach (var mesh in Model.Meshes)
         {
@@ -162,7 +166,9 @@ public class Island
         Game.Gizmos.DrawSphere(bbCenter + new Vector3(-1300f, 0f, -1600f) * _scale, new Vector3(300, 100, 300) * _scale, Color.Red);
         */
 
-        Game.Gizmos.DrawCube(bbCenter, bbExtents * 2f, Color.Red);
+        // Game.Gizmos.DrawCube(bbCenter, bbExtents * 2f, Color.Red);
+        Game.GraphicsDevice.BlendState = previousBlendState;
+        Game.GraphicsDevice.DepthStencilState = previousDepthStencilState;
     }
 
     private void generarBoundinBoxesBasadoEnIsla(int numeroDeModelo)

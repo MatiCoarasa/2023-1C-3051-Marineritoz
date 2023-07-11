@@ -1,6 +1,4 @@
 ﻿using System;
-using BepuPhysics;
-using ImGuiNET;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -15,6 +13,7 @@ using TGC.MonoGame.TP.Menu;
 using TGC.MonoGame.TP.Menu.GodMode;
 using TGC.MonoGame.TP.Utils.GUI.ImGuiNET;
 using System.Collections.Generic;
+using TGC.MonoGame.Samples.Samples.Shaders.SkyBox;
 
 namespace TGC.MonoGame.TP
 {
@@ -40,7 +39,7 @@ namespace TGC.MonoGame.TP
         private Effect TextureShader { get; set; }
         private Effect BasicShader { get; set; }
         public Gizmos Gizmos { get; }
-        private const bool GizmosEnabled = true;
+        private const bool GizmosEnabled = false;
 
         private bool _justChangedScreens;
         private float _timeSinceLastScreenChange;
@@ -100,6 +99,7 @@ namespace TGC.MonoGame.TP
         private SunLight SunLight { get; set; }
         
         private EnemyShipsGenerator EnemyShipsGenerator { get; set; }
+        private SkyBox SkyBox { get; set; }
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
         ///     Escribir aqui el codigo de inicializacion: el procesamiento que podemos pre calcular para nuestro juego.
@@ -173,6 +173,11 @@ namespace TGC.MonoGame.TP
             EnemyShipsGenerator.LoadContent(enemyShipModel, TextureShader, Map);
             Rain.Load();
             
+            var skyBox = Content.Load<Model>(ContentFolder3D + "skybox/cube");
+            var skyBoxTexture = Content.Load<TextureCube>(ContentFolderTextures + "skyboxes/sunset/sunset");
+            var skyBoxEffect = Content.Load<Effect>(ContentFolderEffects + "SkyBox");
+            SkyBox = new SkyBox(skyBox, skyBoxTexture, skyBoxEffect);
+
             Options.LoadModifiers();
             base.LoadContent();
         }
@@ -291,18 +296,26 @@ namespace TGC.MonoGame.TP
 
         private void GameDraw(Camera camera)
         {
-
             FrustumBounding = new BoundingFrustum(camera.View * camera.Projection);
             GraphicsDevice.Clear(GlobalConfig.SkyColor);
+
+            var originalRasterizerState = GraphicsDevice.RasterizerState;
+            var rasterizerState = new RasterizerState();
+            rasterizerState.CullMode = CullMode.None;
+            Graphics.GraphicsDevice.RasterizerState = rasterizerState;
+            SkyBox.Draw(camera.View, camera.Projection, camera.Position);
+            GraphicsDevice.RasterizerState = originalRasterizerState;
+            
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             Rain.Draw(TotalTime, camera);
+            Map.Draw(this, camera, SunLight.Light.Position, FrustumBounding);
             Water.Draw(ShipPosition, SunLight.Light.Position, camera, TotalTime, EnvironmentMapRenderTarget);
             SunLight.Draw(camera, BasicShader);
             EnemyShipsGenerator.Draw(camera, SunLight.Light.Position);
-            Map.Draw(this, camera, SunLight.Light.Position, FrustumBounding);
             Ship.Draw(camera, SpriteBatch, SunLight.Light.Position, GraphicsDevice.Viewport.Height, true);
             HealthBar.Draw(SpriteBatch, GraphicsDevice.Viewport);
             Gizmos.Draw();
+            
         }
 
         /// <summary>

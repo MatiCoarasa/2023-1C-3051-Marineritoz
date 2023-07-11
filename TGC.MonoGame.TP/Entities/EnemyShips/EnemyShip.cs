@@ -21,7 +21,8 @@ public class EnemyShip
     private GlobalConfigurationSingleton GlobalConfig => GlobalConfigurationSingleton.GetInstance();
     private Ray[] IARays = new Ray[3];
     private float[] IARaysCollisionsDistance = new float[2] { float.MaxValue, float.MaxValue };
-
+    private float RotationAngle { get; set; } = 0f;
+    
     public EnemyShip(TGCGame game)
     {
         Game = game;
@@ -54,6 +55,12 @@ public class EnemyShip
         IARays[2].Position = origen;
         IARays[2].Direction = Vector3.Cross(Vector3.Normalize(target), Vector3.Up);
     }
+    
+    private float Lerp(float firstFloat, float secondFloat, float by)
+    {
+        return firstFloat * (1 - by) + secondFloat * by;
+    }
+
     public void Update(float totalTime, float deltaTime, Camera followCamera, Vector3 shipPosition, List<BoundingSphere> islandsBoxes)
     {
         shipPosition.Y = 0;
@@ -70,7 +77,6 @@ public class EnemyShip
             IARaysCollisionsDistance[1] = Math.Min(IARaysCollisionsDistance[1], IARayRightDistance);
         }
         Vector3 translation;
-        double angle;
         if (IARayCollided)
         {
             if (IARaysCollisionsDistance[0] > IARaysCollisionsDistance[1])
@@ -78,29 +84,32 @@ public class EnemyShip
                 translation = World.Translation + IARays[0].Direction *
                     GlobalConfig.EnemyVelocity * deltaTime;
                 translation.Y = 0;
-                angle = Math.Acos(Vector3.Dot(vectorDistanceToShip, World.Left) /
-                                  (vectorDistanceToShip.Length() * World.Left.Length()));
+
+                float anguloNuevo = MathF.Atan2(IARays[0].Direction.X, IARays[0].Direction.Z);
+                RotationAngle = Lerp(RotationAngle, anguloNuevo, 0.6f);
             }
             else
             {
                 translation = World.Translation + IARays[2].Direction *
                     GlobalConfig.EnemyVelocity * deltaTime;
                 translation.Y = 0;
-                angle = Math.Acos(Vector3.Dot(vectorDistanceToShip, World.Right) /
-                                  (vectorDistanceToShip.Length() * World.Right.Length()));
+                
+                float anguloNuevo = MathF.Atan2(IARays[2].Direction.X, IARays[2].Direction.Z);
+                RotationAngle = Lerp(RotationAngle, anguloNuevo, 0.6f);
             }
         }
         else
         {
             translation = World.Translation + Vector3.Normalize(vectorDistanceToShip) * GlobalConfig.EnemyVelocity * deltaTime;
             translation.Y = 0;
-            angle = Math.Acos(Vector3.Dot(vectorDistanceToShip, World.Forward) /
-                              (vectorDistanceToShip.Length() * World.Forward.Length()));
+            
+            float anguloNuevo = MathF.Atan2(vectorDistanceToShip.X, vectorDistanceToShip.Z);
+            RotationAngle = Lerp(RotationAngle, anguloNuevo, 0.6f);
         }
         var waterPosition = translation.GetPositionInWave(totalTime);
         var previousTranslation = World.Translation;
         World = Matrix.CreateScale(0.0025f)
-                * Matrix.CreateRotationY((float) angle)
+                * Matrix.CreateRotationY(RotationAngle)
                 * Matrix.CreateWorld(Vector3.Zero, - waterPosition.binormal, waterPosition.normal)
                 * Matrix.CreateTranslation(new Vector3(translation.X, waterPosition.position.Y, translation.Z));
         var movement = World.Translation - previousTranslation;

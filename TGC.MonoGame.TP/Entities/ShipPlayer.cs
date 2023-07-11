@@ -253,7 +253,8 @@ public class ShipPlayer
     {
         // if (CurrentVelocity == 0f) return false;
 
-        if (!IsReactingToCollision && ShipBoundingBox.Intersects(boundingBox))
+        var collided = ShipBoundingBox.Intersects(boundingBox);
+        if (!IsReactingToCollision && collided)
         {
             if (LastCollisionTimer > 1f)
             {
@@ -262,7 +263,7 @@ public class ShipPlayer
             }
             HasCollisioned = true;
         }
-        return HasCollisioned || Arsenal.CheckCollision(boundingBox);
+        return collided || Arsenal.CheckCollision(boundingBox);
     }
 
     public bool CheckCollision(BoundingSphere boundingSphere, HealthBar healthBar)
