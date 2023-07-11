@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection.Metadata;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using TGC.MonoGame.TP.Cameras;
@@ -36,6 +37,7 @@ public class EnemyShip
 
     private float angle = 0f;
     private int currentBullet = 0;
+    private SoundEffect GunShotEffect;
 
     public EnemyShip(TGCGame game)
     {
@@ -45,11 +47,11 @@ public class EnemyShip
         for (int i = 0; i < 10; i++) _bullets[i] = new Obus(game, World.Translation);
     }
 
-    public void LoadContent(Model model, Effect effect, Model obusModel, Effect obusEffect, Vector3 safeSpawn)
+    public void LoadContent(Model model, Effect effect, Model obusModel, Effect obusEffect, SoundEffect gunshotSoundEffect, Vector3 safeSpawn)
     {
         ObusModel = obusModel;
         ObusEffect = obusEffect;
-
+        GunShotEffect = gunshotSoundEffect;
         Model = model;
         Effect = effect;
         BoundingBox = BoundingVolumesExtensions.CreateAABBFrom(Model);
@@ -148,6 +150,9 @@ public class EnemyShip
         if (distanciaBetweenEnemyAndPlay < 300f && timerCooldownShoot > shootCooldown)
         {
             Fire();
+            var instance = GunShotEffect.CreateInstance();
+            instance.Volume = 0.05f;
+            instance.Play();
             timerCooldownShoot = 0f;
         }
 

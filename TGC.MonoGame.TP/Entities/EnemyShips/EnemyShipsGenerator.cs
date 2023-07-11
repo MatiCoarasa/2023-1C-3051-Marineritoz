@@ -41,7 +41,7 @@ public class EnemyShipsGenerator
         }
         foreach (var enemyShip in EnemyShips)
         {
-            enemyShip.LoadContent(model, effect, _ObusModel, _ObusEffect, map.getSafeSpawnPosition(Vector3.Zero));
+            enemyShip.LoadContent(model, effect, _ObusModel, _ObusEffect, arsenal.GunShotEffect,map.getSafeSpawnPosition(Vector3.Zero));
         }
     }
 
