@@ -12,6 +12,9 @@ public class EnemyShipsGenerator
     private Effect Effect { get; set; }
     private List<Texture2D> ColorTextures { get; } = new List<Texture2D>();
 
+    private Model _ObusModel;
+    private Effect _ObusEffect;
+
     public EnemyShipsGenerator(TGCGame game)
     {
         EnemyShips = new EnemyShip[4];
@@ -21,10 +24,13 @@ public class EnemyShipsGenerator
         }
     }
 
-    public void LoadContent(Model model, Effect effect, Map map)
+    public void LoadContent(Model model, Effect effect, Map map, Arsenal arsenal)
     {
         var enemyModel = model;
         Effect = effect;
+        _ObusModel = arsenal.Model;
+        _ObusEffect = arsenal.Effect;
+
         foreach (var mesh in enemyModel.Meshes)
         {
             foreach (var meshPart in mesh.MeshParts)
@@ -35,7 +41,7 @@ public class EnemyShipsGenerator
         }
         foreach (var enemyShip in EnemyShips)
         {
-            enemyShip.LoadContent(model, effect, map.getSafeSpawnPosition(Vector3.Zero));
+            enemyShip.LoadContent(model, effect, _ObusModel, _ObusEffect, map.getSafeSpawnPosition(Vector3.Zero));
         }
     }
 
@@ -48,6 +54,15 @@ public class EnemyShipsGenerator
             {
                 EnemyShips[i].RestartPosition(map.getSafeSpawnPosition(shipPosition));
             }
+
+            foreach(Obus obus in EnemyShips[i]._bullets)
+            {
+                if (obus.OBBObus.Intersects(shipPlayer.ShipBoundingBox))
+                {
+                    shipPlayer.ReceivDamage(healthBar);
+                }
+            }
+
         }
     }
 

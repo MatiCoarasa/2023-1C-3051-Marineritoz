@@ -15,12 +15,12 @@ namespace TGC.MonoGame.TP.Entities
 {
 
 
-    class Arsenal
+    public class Arsenal
     {
 
         private TGCGame Game;
-        private Effect Effect;
-        private Model Model;
+        public Effect Effect;
+        public Model Model;
         private const string ContentFolder3D = "Models/";
         public const string ContentFolderSounds = "Sounds/";
         public const string ContentFolderEffects = "Effects/";
@@ -120,9 +120,9 @@ namespace TGC.MonoGame.TP.Entities
         public void LoadContent(ContentManager content, Effect effect)
         {
 
-            Effect = content.Load<Effect>(ContentFolderEffects + "BasicShader");
+            Effect = effect;
             Model = content.Load<Model>(ContentFolder3D + "Obus/Obus");
-
+            
             foreach (var mesh in Model.Meshes)
             {
                 foreach (var meshPart in mesh.MeshParts)

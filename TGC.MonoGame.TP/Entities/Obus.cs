@@ -15,14 +15,14 @@ namespace TGC.MonoGame.TP.Entities
     {
         private Effect Effect;
         private Model Model;
-        private OrientedBoundingBox OBBObus;
+        public OrientedBoundingBox OBBObus;
         private TGCGame Game;
 
         private Matrix World;
         public Vector3 ObusPosition;
 
         // 0.0018f
-        private float _standarScale = 0.0018f;
+        private float _standarScale = 0.002f;
         private float actualObusRotation = 0f;
         private float time;
         public bool Firing = false;
@@ -67,7 +67,7 @@ namespace TGC.MonoGame.TP.Entities
                     actualCannonDirection.Y = MathF.Tan(actualAngle);
                     ObusPosition += (Vector3.Normalize(actualCannonDirection) * actualSpeed * time + 0.5f * gravity * Vector3.Down * time * time) * elapsedTime;
 
-                    OBBObus.Orientation = Matrix.CreateRotationY(actualObusRotation);
+                OBBObus.Orientation = Matrix.CreateRotationY(actualObusRotation);
 
                     World = Matrix.CreateScale(_standarScale) * Matrix.CreateRotationY(actualObusRotation) * Matrix.CreateTranslation(ObusPosition);
                     OBBObus.Center = World.Translation;
@@ -100,7 +100,7 @@ namespace TGC.MonoGame.TP.Entities
 
             Effect.Parameters["View"].SetValue(Camera.View);
             Effect.Parameters["Projection"].SetValue(Camera.Projection);
-            Effect.Parameters["DiffuseColor"].SetValue(Color.Yellow.ToVector3());
+           // Effect.Parameters["DiffuseColor"].SetValue(Color.Gray.ToVector3());
 
             foreach (var mesh in Model.Meshes)
             {

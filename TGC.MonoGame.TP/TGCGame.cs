@@ -170,7 +170,7 @@ namespace TGC.MonoGame.TP
             _colliders = Map.IslandColliders();
          
             var enemyShipModel = Content.Load<Model>(ContentFolder3D + "ShipB/source/Ship");
-            EnemyShipsGenerator.LoadContent(enemyShipModel, TextureShader, Map);
+            EnemyShipsGenerator.LoadContent(enemyShipModel, TextureShader, Map, Ship.Arsenal);
             Rain.Load();
             
             var skyBox = Content.Load<Model>(ContentFolder3D + "skybox/cube");
