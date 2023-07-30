@@ -33,4 +33,4 @@ Litvak, Ezequiel  |  Coarasa, Matias | Herrera, Federico
 
 ## Game Play
 
-[![Watch the video](https://img.youtube.com/vi/pgEwUC0jvH4/0.jpg)](https://www.youtube.com/playlist?list=PLRM4L32DjvnazuMl8wZlbpEYL5Qh63ulG)
+[![Watch the video](https://i.ibb.co/qyF3TvB/Screenshot-2023-07-30-205504.png)](https://www.youtube.com/watch?v=rhqvnEFfY24)
