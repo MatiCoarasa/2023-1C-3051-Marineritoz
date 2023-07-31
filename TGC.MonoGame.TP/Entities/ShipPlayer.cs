@@ -42,7 +42,7 @@ public class ShipPlayer
     
     private GearBox GearBox { get; set; }
 
-    Arsenal Arsenal { get; set; }
+    public Arsenal Arsenal { get; set; }
 
     // Uso el constructor como el Initialize
     public ShipPlayer(TGCGame game, bool reactToKeyboard)
@@ -253,7 +253,8 @@ public class ShipPlayer
     {
         // if (CurrentVelocity == 0f) return false;
 
-        if (!IsReactingToCollision && ShipBoundingBox.Intersects(boundingBox))
+        var collided = ShipBoundingBox.Intersects(boundingBox);
+        if (!IsReactingToCollision && collided)
         {
             if (LastCollisionTimer > 1f)
             {
@@ -262,7 +263,16 @@ public class ShipPlayer
             }
             HasCollisioned = true;
         }
-        return HasCollisioned || Arsenal.CheckCollision(boundingBox);
+        return collided || Arsenal.CheckCollision(boundingBox);
+    }
+
+    public void ReceivDamage(HealthBar healthBar)
+    {
+        if (LastCollisionTimer > 1f)
+        {
+            healthBar.Life -= 30;
+            LastCollisionTimer = 0f;
+        }
     }
 
     public bool CheckCollision(BoundingSphere boundingSphere, HealthBar healthBar)

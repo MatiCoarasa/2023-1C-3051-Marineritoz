@@ -47,12 +47,17 @@ namespace TGC.MonoGame.TP.Entities
             var world = Matrix.CreateScale(500f) * Matrix.CreateTranslation(waterPosition);
             var worldAbove = Matrix.CreateScale(50f) * Matrix.CreateTranslation(waterPosition);
 
-            GraphicsDevice.BlendState = BlendState.Opaque;
+            var previousBlendState = GraphicsDevice.BlendState;
+            var previousDepthStencilState = GraphicsDevice.DepthStencilState;
+            GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+            GraphicsDevice.BlendState = BlendState.NonPremultiplied;
             GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             Quad.SetOceanDrawing();
             Quad.Draw(lightPosition, camera, world * Matrix.CreateTranslation(Vector3.Down * 0.27f), time, renderTargetCube);
             Quad.SetEnvironmentMappingDrawing();
             Quad.Draw(lightPosition, camera, worldAbove, time, renderTargetCube);
+            GraphicsDevice.BlendState = previousBlendState;
+            GraphicsDevice.DepthStencilState = previousDepthStencilState;
         }
         
         public void SetOceanDrawing()
